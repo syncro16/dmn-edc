@@ -4,6 +4,10 @@
 #define VERSION_NUMBER 0x0103
 #define PRODUCT_NAME "dmn-edc 201705"
 
+/* Choose what kind of RPM sensor are you using */
+//#define RPM_SENSOR_TYPE_DEFAULT 1
+#define RPM_SENSOR_TYPE_CUSTOM 1
+
 #define NUMBER_OF_CYLINDERS 5
 #define NEEDLELIFTSENSOR_CYLINDER 3
 #define FIRING_ORDER {4,5,3,1,2} /* Starting on with cylinder where needle sensor is */

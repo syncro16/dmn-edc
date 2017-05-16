@@ -60,19 +60,28 @@ Pump head wires
 
 
 */
-#include "RPMDefaultCps.h"
+#include "defines.h"
 #include "ConfEditor.h"
 #include "Core.h"
 #include "QuantityAdjuster.h"
 #include "TimerThree.h"
 #include "utils.h"
 #include "DTC.h"
-#include "defines.h"
 #include "MemoryFree.h"
 #include "PID.h"
 
-// Crankshaft position sensor decoding, use RPMDefaultCps or RPMHiDensityCps 
-static RPMDefaultCps rpm;
+
+#ifdef RPM_SENSOR_TYPE_DEFAULT
+#include "RPMDefaultCPS.h"
+RPMDefaultCPS rpm;
+#endif
+
+#ifdef RPM_SENSOR_TYPE_CUSTOM
+#include "RPMCustomCPS.h"
+RPMCustomCPS rpm;
+#endif
+
+
 
 // VP37 Quantity adjuster module
 static QuantityAdjuster adjuster;
@@ -252,17 +261,8 @@ void refreshSlowSensors() {
 	adjuster.setPointMax=0;
 	adjuster.setPointMin=2000;
 	
-	// Calculate advance based on avarage 
-	if (core.controls[Core::valueEngineTimingDiff] && core.controls[Core::valueEngineRPMDurationBetweenTeeths] ) {
-		// 2018 .. 3544    t=49  r=411
-		unsigned int timerTicksPerDegree = core.controls[Core::valueEngineRPMDurationBetweenTeeths] / (360/NUMBER_OF_CYLINDERS);
-		// Calculate relative position, using *10 fixed point for internal presentation 
-		unsigned int advanceRelative = ((unsigned long)core.controls[Core::valueEngineTimingDiff]*(unsigned long)10)/(unsigned long)timerTicksPerDegree;
-		// Apply BTDC Mark correction
-		int advanceAbsolute = BTDC_MARK-advanceRelative;
-
-		core.controls[Core::valueEngineTimingActual] = (int)advanceAbsolute;
-	}
+	// Register current injection timing (*10 fixed point)
+	core.controls[Core::valueEngineTimingActual] = rpm.getInjectionTiming();
 }
 
 /*
