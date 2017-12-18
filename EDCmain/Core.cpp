@@ -394,7 +394,7 @@ Core::Core() {
 	maps[Core::mapIdxIdlePidP] = (unsigned char*)&idlePidP;
 
 
-	numberOfMaps=15;
+	numberOfMaps=16;
 }
 
 /*

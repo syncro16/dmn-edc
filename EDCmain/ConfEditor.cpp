@@ -814,8 +814,7 @@ void ConfEditor::refresh() {
 const char BWBheader[] PROGMEM = "          0---------------64-------------128-------------192------------255";
 //                             0123456789012345678901234567890123456789012345678901234567890123456789
 const char BWBpid[] PROGMEM = "   PID:  p/P:      i/I:      d/D:                 s/S(peed)      b/B(ias)       ";
-const char BWBtexts[][32] PROGMEM = {"    Base:","     PID:","   Total:","     Map:","Setpoint:","     RPM:","      IQ:","peak:"};
-
+const char BWBtexts[][32] PROGMEM = {"    Base:","     PID:","   Total:","     Map:","Setpoint:","     RPM:","      IQ:","  N75 DC:"};
 void ConfEditor::pageBoostWorkBench() {  
 
 	mapIdx = Core::mapIdxTurboControlMap;
@@ -878,7 +877,7 @@ void ConfEditor::pageBoostWorkBench() {
 	pageMapEditor(true);
 
 	if (redrawView) {
-		for (char  i=0;i<7;i++) {
+		for (char  i=0;i<8;i++) {
 			ansiGotoXy(1,24+i);
 			printFromFlash(BWBtexts[i]);	
 		}		
@@ -978,11 +977,19 @@ void ConfEditor::pageBoostWorkBench() {
 		ansiClearEol();
 	}
 
-		static unsigned char oldIq;
+	static unsigned char oldIq;
 	if (redrawView || core.controls[Core::valueFuelAmount8bit] != oldIq) {
 		oldIq = core.controls[Core::valueFuelAmount8bit];
 		ansiGotoXy(11,30);
 		printIntWithPadding(oldIq,5,' ');
+		ansiClearEol();
+	}
+
+	static unsigned char oldDc;
+	if (redrawView || core.controls[Core::valueN75DutyCycle] != oldDc) {
+		oldDc = core.controls[Core::valueN75DutyCycle];
+		ansiGotoXy(11,31);
+		printIntWithPadding(oldDc,5,' ');
 		ansiClearEol();
 	}
 
