@@ -103,8 +103,12 @@ public:
     static const unsigned char valueQADebug = 54;   
     static const unsigned char valueActuatorSetPoint = 55;
     static const unsigned char valueActuatorActualPosition = 56;    
-    static const unsigned char valueEngineRPMRaw = 57;    
-    static const unsigned char VALUE_MAX = 57;
+    static const unsigned char valueEngineRPMRaw = 57;  
+    static const unsigned char valueBoostPIDComponentP = 58;
+    static const unsigned char valueBoostPIDComponentI = 59;
+    static const unsigned char valueBoostPIDComponentD = 60;
+    static const unsigned char valueBoostCalculatedAmount = 61;
+    static const unsigned char VALUE_MAX = 61;
 
     // Storage for sensors values and such
     volatile int controls[Core::VALUE_MAX+1];    

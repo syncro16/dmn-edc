@@ -340,7 +340,7 @@ void doBoostControl() {
 		analogWrite(PIN_PWM_BOOST_SOLENOID,core.controls[Core::valueN75DutyCycle]);
 		return;
 	}
-	static int boostMin=0, boostMax=255;
+	static int boostMin=0, boostMax=128;
 	static PID boostPidControl(
 		(int*)&core.node[Core::nodeBoostKp].value,
 		(int*)&core.node[Core::nodeBoostKi].value,
@@ -393,16 +393,18 @@ void doBoostControl() {
 			// Fixed DC is the maximum opening
 			// boostMax = core.node[Core::nodeBoostPIDRange].value;
 
-			if (boostRunCount % 4 == 0) {
-				boostMin = -core.node[Core::nodeBoostPIDRange].value; 
-				boostMax = core.node[Core::nodeBoostPIDRange].value; 
+			boostMin = -core.node[Core::nodeBoostPIDRange].value; 
+			boostMax = core.node[Core::nodeBoostPIDRange].value; 
 
-				boostPidControl.setPosition(core.controls[Core::valueBoostTarget]);
-				boostPidControl.calculate();
-				core.controls[Core::valueBoostPIDCorrection] = -core.controls[Core::valueBoostPIDCorrection];
-			}
+			boostPidControl.setPosition(core.controls[Core::valueBoostTarget]);
+			boostPidControl.calculate();
+//				core.controls[Core::valueBoostPIDCorrection] = -core.controls[Core::valueBoostPIDCorrection];
+			core.controls[Core::valueBoostPIDComponentP] = boostPidControl.lastP;
+			core.controls[Core::valueBoostPIDComponentI] = boostPidControl.lastI;
+			core.controls[Core::valueBoostPIDComponentD] = boostPidControl.lastD;			
 
 			idx = core.controls[Core::valueBoostValveDutyCycle] + core.controls[Core::valueBoostPIDCorrection];
+			core.controls[Core::valueBoostCalculatedAmount] = idx;
 			if (idx<0) {
 				idx = 0;
 			}
@@ -439,7 +441,8 @@ void doBoostControl() {
 
 		    	boostPidControl.setPosition(core.controls[Core::valueBoostTarget]);
 		    	boostPidControl.calculate();
-		    	core.controls[Core::valueBoostPIDCorrection] = -core.controls[Core::valueBoostPIDCorrection];
+//		    	core.controls[Core::valueBoostPIDCorrection] = -core.controls[Core::valueBoostPIDCorrection];
+
 		    }
 
 		    if (idx<0) {
@@ -467,9 +470,9 @@ void doBoostControl() {
 
 
 		/* Open vanes when idling */
-		if (core.controls[Core::valueTPSActual] == 0 && core.controls[Core::valueEngineRPMFiltered]<1200) {
+/*		if (core.controls[Core::valueTPSActual] == 0 && core.controls[Core::valueEngineRPMFiltered]<1200) {
 		   	idleRunCycleCount++;
-		   	/* quick test: VNT autoclean */ 
+		   	// quick test: VNT autoclean 
 		   	if (VNT_OPEN_DELAY_ON_IDLE != 0 && idleRunCycleCount > VNT_OPEN_DELAY_ON_IDLE ) {
 		   		core.controls[Core::valueN75DutyCycle] = 255;
 		   	}
@@ -484,7 +487,7 @@ void doBoostControl() {
 		   if (core.controls[Core::valueEngineRPMFiltered]>1200 || core.controls[Core::valueTPSActual] > 0) {
 		   	idleRunCycleCount = 0;
 		   }
-
+*/
 /*
 	SRA.calculate();	
 	SRA.setPosition(core.controls[Core::valueN75DutyCycle]);

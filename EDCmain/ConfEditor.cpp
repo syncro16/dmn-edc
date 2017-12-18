@@ -812,38 +812,180 @@ void ConfEditor::refresh() {
 
 
 const char BWBheader[] PROGMEM = "          0---------------64-------------128-------------192------------255";
-//                                          0123456789012345678901234567890123456789012345678901234567890123456789
+//                             0123456789012345678901234567890123456789012345678901234567890123456789
 const char BWBpid[] PROGMEM = "   PID:  p/P:      i/I:      d/D:                 s/S(peed)      b/B(ias)       ";
-const char BWBtexts[][32] PROGMEM = {"Base:","PID:","Total:","Map:","Setpoint:","RPM:","IQ:","peak:"};
-
+const char BWBtexts[][32] PROGMEM = {"    Base:","     PID:","   Total:","     Map:","Setpoint:","     RPM:","      IQ:","peak:"};
 
 void ConfEditor::pageBoostWorkBench() {  
 
 	mapIdx = Core::mapIdxTurboControlMap;
+	bool redrawView = false;
+	switch (keyPressed) {
+		case 'p':
+			core.setCurrentNode(Core::nodeBoostKp);
+			if (core.node[Core::nodeBoostKp].value)
+				core.node[Core::nodeBoostKp].value--;
+			keyPressed=-1;
+			ansiGotoXy(14,21);
+			printIntWithPadding(core.getNodeData()->value,3,' ');
+		break;
+		case 'P':
+			core.setCurrentNode(Core::nodeBoostKp);
+			if (core.node[Core::nodeBoostKp].value < 255)
+				core.node[Core::nodeBoostKp].value++;
+			keyPressed=-1;
+			ansiGotoXy(14,21);
+			printIntWithPadding(core.getNodeData()->value,3,' ');
+		break;
+		case 'i':
+			core.setCurrentNode(Core::nodeBoostKi);
+			if (core.node[Core::nodeBoostKi].value)
+				core.node[Core::nodeBoostKi].value--;
+			keyPressed=-1;
+			ansiGotoXy(24,21);
+			printIntWithPadding(core.getNodeData()->value,3,' ');
+		break;
+		case 'I':
+			core.setCurrentNode(Core::nodeBoostKi);
+			if (core.node[Core::nodeBoostKi].value < 255)
+				core.node[Core::nodeBoostKi].value++;
+			keyPressed=-1;
+			ansiGotoXy(24,21);
+			printIntWithPadding(core.getNodeData()->value,3,' ');
+		break;
+		case 'd':
+			core.setCurrentNode(Core::nodeBoostKd);
+			if (core.node[Core::nodeBoostKd].value)
+				core.node[Core::nodeBoostKd].value--;
+			keyPressed=-1;
+			ansiGotoXy(34,21);
+			printIntWithPadding(core.getNodeData()->value,3,' ');
+		break;
+		case 'D':
+			core.setCurrentNode(Core::nodeBoostKd);
+			if (core.node[Core::nodeBoostKd].value < 255)
+				core.node[Core::nodeBoostKd].value++;
+			keyPressed=-1;
+			ansiGotoXy(34,21);
+			printIntWithPadding(core.getNodeData()->value,3,' ');
+		break;				
+		case -1:
+			break;
+		default:
+			redrawView = true;
+		
+	}
 	pageMapEditor(true);
 
-	ansiGotoXy(1,21);
-	printFromFlash(BWBpid);
-	ansiGotoXy(1,23);
-	printFromFlash(BWBheader);
+	if (redrawView) {
+		for (char  i=0;i<7;i++) {
+			ansiGotoXy(1,24+i);
+			printFromFlash(BWBtexts[i]);	
+		}		
+		ansiGotoXy(1,21);
+		printFromFlash(BWBpid);
+		ansiGotoXy(1,23);
+		printFromFlash(BWBheader);
+		ansiGotoXy(14,22);
+		printIntWithPadding(core.node[Core::nodeBoostKp].value,4,' ');		
+		ansiGotoXy(24,22);
+		printIntWithPadding(core.node[Core::nodeBoostKi].value,4,' ');		
+		ansiGotoXy(34,22);
+		printIntWithPadding(core.node[Core::nodeBoostKd].value,4,' ');		
+	}
+	static int pp,ii,dd;
+	if (redrawView || pp != core.controls[Core::valueBoostPIDComponentP]) {
+		pp = core.controls[Core::valueBoostPIDComponentP];
+		ansiGotoXy(14,22);
+		printIntWithPadding(pp,4,' ');
+	}
+	if (redrawView || ii != core.controls[Core::valueBoostPIDComponentI]) {
+		ii = core.controls[Core::valueBoostPIDComponentI];
+		ansiGotoXy(24,22);
+		printIntWithPadding(ii,4,' ');
+	}
+	if (redrawView || dd != core.controls[Core::valueBoostPIDComponentD]) {
+		dd = core.controls[Core::valueBoostPIDComponentD];
+		ansiGotoXy(34,22);
+		printIntWithPadding(dd,4,' ');
+	}
 
 	static unsigned char oldBVDC;
-	if (1) {
-		ansiGotoXy(1,24);
-		printFromFlash(BWBtexts[0]);
-
-	}
-	if (core.controls[Core::valueBoostValveDutyCycle]/4 != oldBVDC) {
+	if (redrawView || core.controls[Core::valueBoostValveDutyCycle]/4 != oldBVDC) {
 		oldBVDC = core.controls[Core::valueBoostValveDutyCycle]/4;
 		ansiGotoXy(11,24);
 		for (char i=0;i<oldBVDC;i++)
 			Serial.print("*");
 		ansiClearEol();
 		ansiGotoXy(76,24);
-		printIntWithPadding(core.controls[Core::valueBoostValveDutyCycle],3,' ');
-		oldBVDC--;
-		
+		printIntWithPadding(core.controls[Core::valueBoostValveDutyCycle],4,' ');	
 	}
+
+	static int oldPid;
+	if (redrawView || core.controls[Core::valueBoostPIDCorrection] /4 != oldPid) {
+		oldPid = core.controls[Core::valueBoostPIDCorrection] /4 ;
+		ansiGotoXy(11,25);
+		ansiClearEol();	
+		
+		if (oldPid<0) {
+			ansiGotoXy(11+32+oldPid,25);
+			for (char i=0;i<(-oldPid);i++)
+				Serial.print("-");
+		} else {
+			ansiGotoXy(11+32,25);			
+			for (char i=0;i<oldPid;i++)
+				Serial.print("+");
+		}
+		ansiGotoXy(76,25);
+		printIntWithPadding(core.controls[Core::valueBoostPIDCorrection],4,' ');
+	}
+
+	static unsigned char oldBCA;
+	if (redrawView || core.controls[Core::valueBoostCalculatedAmount]/4 != oldBCA) {
+		oldBCA = core.controls[Core::valueBoostCalculatedAmount]/4;
+		ansiGotoXy(11,26);
+		for (char i=0;i<oldBCA;i++)
+			Serial.print("*");
+		ansiClearEol();
+		ansiGotoXy(76,26);
+		printIntWithPadding(core.controls[Core::valueBoostCalculatedAmount],4,' ');	
+	}
+
+	static unsigned char oldMap;
+	if (redrawView || core.controls[Core::valueBoostPressure]/4 != oldMap) {
+		oldMap = core.controls[Core::valueBoostPressure]/4;
+		ansiGotoXy(11,27);
+		for (char i=0;i<oldMap;i++)
+			Serial.print("*");
+		ansiClearEol();
+	}
+
+
+	static unsigned char oldMapSetpoint;
+	if (redrawView || core.controls[Core::valueBoostTarget]/4 != oldMapSetpoint) {
+		oldMapSetpoint = core.controls[Core::valueBoostTarget]/4;
+		ansiGotoXy(11,28);
+		for (char i=0;i<oldMapSetpoint;i++)
+			Serial.print("*");
+		ansiClearEol();
+	}
+
+	static unsigned char oldRPM;
+	if (redrawView || (core.controls[Core::valueEngineRPM]/10)*10 != oldRPM) {
+		oldRPM = (core.controls[Core::valueEngineRPM]/10)*10;
+		ansiGotoXy(11,29);
+		printIntWithPadding(oldRPM,5,' ');
+		ansiClearEol();
+	}
+
+		static unsigned char oldIq;
+	if (redrawView || core.controls[Core::valueFuelAmount8bit] != oldIq) {
+		oldIq = core.controls[Core::valueFuelAmount8bit];
+		ansiGotoXy(11,30);
+		printIntWithPadding(oldIq,5,' ');
+		ansiClearEol();
+	}
+
 	/*
 	p/P: xxx i/I: xxx d/D: xxx           s/S(peed) xxx b/B(ias) 
 		  nn       nn       nn 

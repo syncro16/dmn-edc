@@ -10,7 +10,7 @@ private:
     int *Kp; // p factor
     int *Ki; // i factor
     int *Kd; // d factor
-    int error,errorOld;
+    long int error,errorOld;
     float p,i,d,integral,derivate;
     int *minOutput; // Saturate output
     int *maxOutput; // Saturate output
@@ -22,6 +22,7 @@ private:
     int *bias;
 
 public:
+    int lastP,lastI,lastD;
 
 public:
     PID(int *p,int *i,int *d,int *minOutput,int *maxOutput,int *speed,int *input,int *output);    

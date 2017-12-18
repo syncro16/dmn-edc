@@ -39,7 +39,8 @@ void PID::calculate() {
 	if (bias && error<0)
 		error = (error * (*bias) / 100.0); 
 
-	integral = integral + error*((float)*Ki/100.0);
+
+	integral = integral + (error * ((float)(*Ki)/100.0));
 
 	if (integral>*maxOutput)
 		integral = *maxOutput; 
@@ -50,12 +51,16 @@ void PID::calculate() {
 	derivate = (error - errorOld);
 	errorOld = error;
 
-	p = ((float)*Kp/100.0) * (float)error;
+	p = (*Kp/100.0) * (float)error;
 	i = integral;
-	d = ((float)*Kd/100.0) * (float)derivate;
+	d = ((float)(*Kd)/100.0) * (float)derivate;
 	int o = (float)(p+i+d);
-	
-	cli(); // disable interrupts during set 
+
+	lastP = p;
+	lastI = i;
+	lastD = d;	
+
+	//cli(); // disable interrupts during set 
 	if (o>*maxOutput) {
 		*output = *maxOutput;
 	} else if (o<*minOutput) {
@@ -63,7 +68,7 @@ void PID::calculate() {
 	} else {
 		*output = o;
 	}
-	sei();
+	//sei();
 
 	//printf("error=%d p=%d (%f) i=%d (%f) d=%d (%f), sp=%d, tsp=%d, in=%d, out=%d\n", error,*Kp,p, *Ki,i ,*Kd,d, setPoint,targetSetPoint,*input,*output);
 }
