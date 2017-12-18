@@ -36,9 +36,10 @@ private:
     void mainScreen();
     void pageDTC();
     void pageAdaptation();
-    void pageMapEditor();
+    void pageMapEditor(bool compactMode=false);
     void pageOutputTests();
     void pageVisualizer();
+    void pageBoostWorkBench();
     
 public:
     ConfEditor();

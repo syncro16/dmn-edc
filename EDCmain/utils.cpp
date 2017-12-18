@@ -405,7 +405,7 @@ int toTemperature( int rawValue) {
 
 int toVoltage(int raw) {
     // mVolt
-    return int(raw*19.541); // ~4.98v
+    return int(raw*19.64); // ~4.98v
 }
 
 int toRpm(int raw) {

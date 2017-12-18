@@ -4,10 +4,6 @@
 #define VERSION_NUMBER 0x0103
 #define PRODUCT_NAME "dmn-edc 201705"
 
-/* Choose what kind of RPM sensor are you using */
-//#define RPM_SENSOR_TYPE_DEFAULT 1
-#define RPM_SENSOR_TYPE_CUSTOM 1
-
 #define NUMBER_OF_CYLINDERS 5
 #define NEEDLELIFTSENSOR_CYLINDER 3
 #define FIRING_ORDER {4,5,3,1,2} /* Starting on with cylinder where needle sensor is */
@@ -25,6 +21,17 @@
 #define TPS_LIMP_MODE_AMOUNT 68
 #define TPS_SAFETY_BITS_IDLESW 1
 
+#define ENGINE_STATE_STOPPED 0
+#define ENGINE_STATE_GLOW 1
+#define ENGINE_STATE_CRANKING 2
+#define ENGINE_STATE_IDLE 10
+#define ENGINE_STATE_PID_IDLE 11
+#define ENGINE_STATE_LOW_RPM_RANGE 100
+#define ENGINE_STATE_HIGH_RPM_RANGE 101
+#define ENGINE_RPM_HIGH_RANGE_LIMIT 2200
+#define ENGINE_RPM_CRANKING_LIMIT   370
+
+
 /* Trigger inputs (interrupt handlers) */
 #define PIN_INPUT_RPM 2 /* do not change! */ 
 #define PIN_INPUT_NEEDLELIFTSENSOR 3 /* do not change! */ 
@@ -32,21 +39,21 @@
 /* Note: PIN 11 & PIN 12 cannot be used for PWM (timer1 is reserved for rpm counting) */
 
 /* Analog Inputs */
-#define PIN_ANALOG_QA_POS A0
-#define PIN_ANALOG_TEMP_FUEL A1
-#define PIN_ANALOG_BATTERY_VOLTAGE A2
+#define PIN_ANALOG_QA_POS A1
+#define PIN_ANALOG_TEMP_FUEL A4
+#define PIN_ANALOG_BATTERY_VOLTAGE A7
 #define PIN_ANALOG_UNDEF_a A3 
 #define PIN_ANALOG_UNDEF_b A4 
-#define PIN_ANALOG_SERVO_POS A5
+#define PIN_ANALOG_SERVO_POS A6
 #define PIN_ANALOG_LAMBDA A6 
-#define PIN_ANALOG_EGT A7 
-#define PIN_ANALOG_MAP A8
-#define PIN_ANALOG_TEMP_INTAKE A9
-#define PIN_ANALOG_TEMP_GEARBOX A10
-#define PIN_ANALOG_TEMP_COOLANT A11
+#define PIN_ANALOG_EGT A6 
+#define PIN_ANALOG_MAP A5
+#define PIN_ANALOG_TEMP_INTAKE A2
+#define PIN_ANALOG_TEMP_GEARBOX A6
+#define PIN_ANALOG_TEMP_COOLANT A6
 
 /* TPS Sensor */
-#define PIN_ANALOG_TPS_POS A12
+#define PIN_ANALOG_TPS_POS A0
 #define PIN_INPUT_TPS_WOT_SW A13  // TODO: swap this with SET_SW (and use pullup ~2.5v (GND=decrease speed, +12v=set/Accel))
 #define PIN_INPUT_TPS_IDLE_SW 36
 #define PIN_INPUT_BRAKE_SW 38

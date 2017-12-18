@@ -5,12 +5,16 @@
  */
 class RPMBase {
 	public:
+	volatile unsigned char errorCount;
+
+	public:
 	RPMBase();
 	virtual void init();
 	virtual unsigned int getLatestMeasure();
 	virtual unsigned int getLatestRawValue();
 	virtual int getInjectionTiming();
 	void measure();
+	unsigned char getError();
 	//void fullRotationTrigger();
 };
 #endif

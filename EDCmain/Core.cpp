@@ -19,9 +19,9 @@ const char nodeDescription[][55] PROGMEM = {
 	"Battery Voltage", // 9
 	"Running State", // 10 
 	"Fuel trim enable", // 11
-	"", // 12
-	"", // 13
-	"", // 14
+	"Fuelmap smoothness", // 12
+	"Initial Injection Quantity", // 13
+	"QA reading sync'd with RPM", // 14
 	"", // 15
 	"", // 16
 	"TPS: signal min limit", // 17
@@ -91,7 +91,7 @@ Core::Core() {
 	// Initialize core parameters
 	// (file_id in EEPROM, initial_value, min, max, increment_step, bindedRawValue, bindedActualValue,isLocked?,description of this value (max 45 chars!))
 
-	node[nodeSoftwareVersion] = (nodeStruct) {0x0001,VERSION_NUMBER,0x0103,9999,1,valueEngineRPMMin,valueEngineRPMMax,NODE_PROPERTY_LOCKED,VALUE_INT};  
+	node[nodeSoftwareVersion] = (nodeStruct) {0x0000,VERSION_NUMBER,0x0103,9999,1,valueEngineRPMMin,valueEngineRPMMax,NODE_PROPERTY_LOCKED,VALUE_INT};  
 	node[nodeEngineRPM] =       (nodeStruct) {0x1001,0,0,0,1,valueEngineRPMFiltered,valueEngineRPMJitter, NODE_PROPERTY_LOCKED,VALUE_INT};
 	node[nodeEngineTiming] =    (nodeStruct) {0x1002,0,0,0,1,valueEngineTimingActual,valueNone, NODE_PROPERTY_LOCKED,VALUE_INJECTION_TIMING};  
 	node[nodeTempEngine] =      (nodeStruct) {0x1003,87+64,255,0,1,valueTempEngine,valueNone, NODE_PROPERTY_EDITABLE,VALUE_CELSIUS};  
@@ -100,15 +100,15 @@ Core::Core() {
 	node[nodePressure] =        (nodeStruct) {0x1006,0,0,0,1,valueBoostPressure,valueNone, NODE_PROPERTY_LOCKED,VALUE_KPA};  
 	node[nodeHeartBeat] =       (nodeStruct) {0x1007,0,1,3,1,valueEngineRPMRaw,valueNone, NODE_PROPERTY_EDITABLE,VALUE_INT};      
 	node[nodeInjectionThresholdVoltage] = 
-	                            (nodeStruct) {0x1000,0,0,1,1,valueInjectionThresholdVoltage,valueNone, NODE_PROPERTY_LOCKED,VALUE_VOLTAGE};     
-	node[nodeBatteryVoltage] =  (nodeStruct) {0x1008,0,0,1,1,valueBatteryVoltage,valueNone, NODE_PROPERTY_LOCKED,VALUE_BATTERY_VOLTAGE};     
-	node[nodeRunMode] =         (nodeStruct) {0x1009,0,0,1,1,valueRunMode,valueNone, NODE_PROPERTY_LOCKED,VALUE_INT};     
-	node[nodeFuelTrim] =        (nodeStruct) {0x100A,0,0,1,1,valueNone,valueFuelTrim, NODE_PROPERTY_EDITABLE,VALUE_BOOLEAN};
-	node[nodeFree1] =           (nodeStruct) {0x100B,0,0,1,1,valueNone,valueNone, NODE_PROPERTY_HIDDEN,VALUE_INT};     
-	node[nodeFree2] =           (nodeStruct) {0x100C,0,0,1,1,valueNone,valueNone, NODE_PROPERTY_HIDDEN,VALUE_INT};     
-	node[nodeFree3] =           (nodeStruct) {0x100D,0,0,1,1,valueNone,valueNone, NODE_PROPERTY_HIDDEN,VALUE_INT};     
-	node[nodeFree4] =           (nodeStruct) {0x100E,0,0,1,1,valueNone,valueNone, NODE_PROPERTY_HIDDEN,VALUE_INT};     
-	node[nodeFree5] =           (nodeStruct) {0x100F,0,0,1,1,valueNone,valueNone, NODE_PROPERTY_HIDDEN,VALUE_INT};     
+	                            (nodeStruct) {0x1008,0,0,1,1,valueInjectionThresholdVoltage,valueNone, NODE_PROPERTY_LOCKED,VALUE_VOLTAGE};     
+	node[nodeBatteryVoltage] =  (nodeStruct) {0x1009,0,0,1,1,valueBatteryVoltage,valueNone, NODE_PROPERTY_LOCKED,VALUE_BATTERY_VOLTAGE};     
+	node[nodeRunMode] =         (nodeStruct) {0x100A,0,0,1,1,valueRunMode,valueNone, NODE_PROPERTY_LOCKED,VALUE_INT};     
+	node[nodeFuelTrim] =        (nodeStruct) {0x100B,0,0,1,1,valueNone,valueFuelTrim, NODE_PROPERTY_EDITABLE,VALUE_BOOLEAN};
+	node[nodeFuelMapSmoothness] =  (nodeStruct) {0x100C,0,0,100,5,valueNone,valueNone, NODE_PROPERTY_EDITABLE,VALUE_INT};     
+	node[nodeInitialInjectionQuantity] =       (nodeStruct) {0x100D,120,0,1000,5,valueNone,valueNone, NODE_PROPERTY_EDITABLE,VALUE_INT};     
+	node[nodeQASync] =           (nodeStruct) {0x100E,0,0,1,1,valueNone,valueNone, NODE_PROPERTY_EDITABLE,VALUE_BOOLEAN};     
+	node[nodeFree4] =           (nodeStruct) {0x100F,0,0,1,1,valueNone,valueNone, NODE_PROPERTY_HIDDEN,VALUE_INT};     
+//	node[nodeFree5] =           (nodeStruct) {0x100F,0,0,1,1,valueNone,valueNone, NODE_PROPERTY_HIDDEN,VALUE_INT};     
 
 	node[nodeTPSMin] = 	        (nodeStruct) {0x1010,201,25,1000,1,valueTPSRaw,valueTPSActual,NODE_PROPERTY_EDITABLE,VALUE_VOLTAGE};  
 	node[nodeTPSMax] =          (nodeStruct) {0x1011,885,25,1000,1,valueTPSRaw,valueTPSActual,NODE_PROPERTY_EDITABLE,VALUE_VOLTAGE};
@@ -141,21 +141,21 @@ Core::Core() {
 	node[nodeQASetPoint] =      (nodeStruct) {0x1020,0,0,1023,1,valueNone,valueQAfeedbackSetpoint,NODE_PROPERTY_LOCKED,VALUE_INT};  
 	node[nodeQAMinPWM] =        (nodeStruct) {0x1021,100,1,700,1,valueNone,valueQAPWMActual,NODE_PROPERTY_EDITABLE,VALUE_INT};      
 	node[nodeQAMaxPWM] =        (nodeStruct) {0x1022,650,1,800,1,valueNone,valueQAPWMActual,NODE_PROPERTY_EDITABLE,VALUE_INT};     
-	node[nodeMAPMin] =          (nodeStruct) {0x1023,138,25,1000,1,valueMAPRaw,valueMAPActual,NODE_PROPERTY_EDITABLE,VALUE_VOLTAGE};  
-	node[nodeMAPMax] =          (nodeStruct) {0x1024,435,25,1000,1,valueMAPRaw,valueMAPActual,NODE_PROPERTY_EDITABLE,VALUE_VOLTAGE};
-	node[nodeMAPkPa] =          (nodeStruct) {0x1025,250,100,1000,5,valueBoostPressure,valueNone,NODE_PROPERTY_EDITABLE,VALUE_KPA};  
+	node[nodeMAPMin] =          (nodeStruct) {0x1023,135,0,1000,5,valueMAPRaw,valueMAPActual,NODE_PROPERTY_EDITABLE,VALUE_VOLTAGE};  
+	node[nodeMAPMax] =          (nodeStruct) {0x1024,935,0,1000,5,valueMAPRaw,valueMAPActual,NODE_PROPERTY_EDITABLE,VALUE_VOLTAGE};
+	node[nodeMAPkPa] =          (nodeStruct) {0x1025,300,100,1000,5,valueNone,valueNone,NODE_PROPERTY_EDITABLE,VALUE_INT};  
 	node[nodeControlMapScaleRPM] = 
 	                            (nodeStruct) {0x1026,5000,100,10000,100,valueNone,valueNone,NODE_PROPERTY_EDITABLE,VALUE_INT};  
 	node[nodeGenericDebugValue] = 
 	                            (nodeStruct) {0x1027,0,0,1023,16,valueNone,valueNone,NODE_PROPERTY_EDITABLE,VALUE_KPA};  
 	node[nodeQADebugJitter] =   (nodeStruct) {0x1028,0,0,1024,1,valueNone,valueQAJitter,NODE_PROPERTY_LOCKED,VALUE_INT};  
-	node[nodeQAPIDKp] =         (nodeStruct) {0x1029,80,0,1000,1,valueNone,valueQAPIDPparam,NODE_PROPERTY_EDITABLE,VALUE_INT};  
-	node[nodeQAPIDKi] =         (nodeStruct) {0x102A,3,0,1000,1,valueNone,valueQAPIDIparam,NODE_PROPERTY_EDITABLE,VALUE_INT};  
-	node[nodeQAPIDKd] =         (nodeStruct) {0x102B,3,0,1000,1,valueNone,valueQAPIDDparam,NODE_PROPERTY_EDITABLE,VALUE_INT};  
+	node[nodeQAPIDKp] =         (nodeStruct) {0x1029,52/*80*/,0,1000,1,valueNone,valueQAPIDPparam,NODE_PROPERTY_EDITABLE,VALUE_INT};  
+	node[nodeQAPIDKi] =         (nodeStruct) {0x102A,9/*3*/,0,1000,1,valueNone,valueQAPIDIparam,NODE_PROPERTY_EDITABLE,VALUE_INT};  
+	node[nodeQAPIDKd] =         (nodeStruct) {0x102B,0,0,1000,1,valueNone,valueQAPIDDparam,NODE_PROPERTY_EDITABLE,VALUE_INT};  
 	node[nodeQAPIDSpeed] =      (nodeStruct) {0x102C,25,1,128,1,valueNone,valueNone,NODE_PROPERTY_EDITABLE,VALUE_INT};     
 	node[nodeQAPIDBias] =       (nodeStruct) {0x102D,55,1,200,5,valueNone,valueNone,NODE_PROPERTY_EDITABLE,VALUE_INT};      
 
-	node[nodeBoostAdjusting] =  (nodeStruct) {0x102E,0,0,4,1,valueN75DutyCycleBaseForPid,valueBoostPIDCorrection,NODE_PROPERTY_EDITABLE,VALUE_INT};      
+	node[nodeBoostAdjusting] =  (nodeStruct) {0x102E,0,0,4,1,valueBoostValveDutyCycle,valueBoostPIDCorrection,NODE_PROPERTY_EDITABLE,VALUE_INT};      
 	node[nodeBoostSpeed] =      (nodeStruct) {0x102F,5,1,200,10,valueNone,valueNone,NODE_PROPERTY_EDITABLE,VALUE_INT};      
 	node[nodeBoostKp] =         (nodeStruct) {0x1030,5,1,2000,1,valueNone,valueNone,NODE_PROPERTY_EDITABLE,VALUE_INT};      
 	node[nodeBoostKi] =         (nodeStruct) {0x1031,5,1,2000,1,valueNone,valueNone,NODE_PROPERTY_EDITABLE,VALUE_INT};      
@@ -193,12 +193,12 @@ Core::Core() {
 	static unsigned char fuelMap[] = {
 	  0xF0,0xF0,'M','2','D',
 	  0x8,0x6,MAP_AXIS_RPM,MAP_AXIS_TPS,MAP_AXIS_INJECTED_FUEL,
- 		180,	80,     35,     0,      0,      0,      0,      0,
-		180,    98,    98,    37,     0,      0,      0,      0,
-	    180,    109,    109,    79,    37,     10,      0,      0,
-	    180,    109,    123,    134,    143,    87,     10,     0,
-        180,    109,    131,    151,    156,    156,    77,     0,
-        180,    109,    150,    156,    156,    164,    164,    0,      
+ 		100,	70,     35,     0,      0,      0,      0,      0,
+		100,    100,    78,    37,     0,      0,      0,      0,
+	    100,    100,    80,    75,    37,     10,      0,      0,
+	    100,    100,    100,    100,    60,    77,     10,     0,
+        100,    100,    100,    100,    100,    100,    77,     0,
+        100,    100,    100,    100,    100,    100,    100,    0,      
 	  0,0,0,0,0                // lastX,lastY,lastRet,lastRet 10bit (2 bytes)
 	 };
 

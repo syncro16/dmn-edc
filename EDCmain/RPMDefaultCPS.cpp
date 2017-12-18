@@ -1,9 +1,6 @@
-#include "defines.h"
 #include "RPMDefaultCPS.h"
 
-#ifdef RPM_SENSOR_TYPE_DEFAULT
-
-/* sd
+/* 
  *  Some low level functions for RPM counting (and also for injection timing measurement) 
  *  
  *  Timer 1 frequency (250KHz) is optimized for 4 ... 6 marks on flywheel (same as number of cylinders, usually) 
@@ -26,11 +23,9 @@ volatile unsigned int rpmDuration;
 static inline void rpmTimerSetup() __attribute__((always_inline));
 static inline void rpmTimerEnable() __attribute__((always_inline));
 static inline void rpmTimerDisable() __attribute__((always_inline));
-static inline void needleTrigger()  __attribute__((always_inline));
 void rpmTrigger();
 
 static inline void rpmTimerSetup()  {
-	// Arduino defaults 490Hz base freq which is fine to us
 	cli();
 	TCCR1A = 0; 
 	TCCR1B = 0; 
@@ -39,14 +34,15 @@ static inline void rpmTimerSetup()  {
 
  	TIMSK1 |= (1 << OCIE1A); // enable timer compare interrupt
  	sei();
-	attachInterrupt(0, rpmTrigger, RISING);  // Interrupt 0 -- PIN2 -- LM1815 gated output 
+	//attachInterrupt(0, rpmTrigger, RISING);  // Interrupt 0 -- PIN2 -- LM1815 gated output 
+	attachInterrupt(0, rpmTrigger, FALLING);  // Interrupt 0 -- PIN2 -- Cherry GS sensor 
 
  }
 
  static inline void rpmTimerEnable() {
  	cli();
  	TCNT1 = 0;
- 	TCCR1B = 11; // WGM12 = 8 +CS11 = 2+CS10 = 1  // Clock select 490Hz
+ 	TCCR1B = 11; // WGM12 = 8 +CS11 = 2+CS10 = 1
  	sei();
  }
 
@@ -68,72 +64,49 @@ ISR(TIMER1_COMPA_vect)
 }
 
 
-unsigned char volatile skipInjectionTrigger;
 
+volatile unsigned char *errCnt;
 
 void rpmTrigger() { 
-	static unsigned char cylinder=0;;
 	cli();
-	rpmDuration = TCNT1;
-	rawValues[cylinder]=rpmDuration;
+	unsigned int dur = TCNT1;
+	rpmDuration = dur;
 	injectionBegin = 0;
 	sei();
-	cylinder++;
-	if (cylinder>NUMBER_OF_CYLINDERS)
-		cylinder=0;
 	rpmTimerEnable();
 
-
-	attachInterrupt(1, needleTrigger, FALLING);
-	// Skip first interrupt (interrupt pending flag is not cleared by attachIntterrupt?? )
-	skipInjectionTrigger = 2; 
-}
-
-void needleTrigger() { 
-	cli();
-	skipInjectionTrigger--;
-
-	if (skipInjectionTrigger) {
+	/* This reads (and smoothes) Quantity Adjuster position syncronized with RPM, 
+	this minimizes errors during reading the position (there is mechanical jitter on qa position) */
+	if (core.node[Core::nodeQASync].value 
+		&& (core.controls[Core::valueRunMode] >= ENGINE_STATE_IDLE 
+			&& core.controls[Core::valueRunMode] <= ENGINE_STATE_LOW_RPM_RANGE )) {
+		cli();
+		core.controls[Core::valueQAfeedbackActual] = (core.controls[Core::valueQAfeedbackActual]+analogRead(PIN_ANALOG_QA_POS))/2;     
 		sei();
-		return;
 	}
-	injectionBegin = TCNT1; 
-	detachInterrupt(1); // disable interrupt handler for a while
-
-	sei();
 }
 
 // Class methods
-
-void RPMDefaultCPS::init() {
+void RPMDefaultCps::init() {
+	errorCount = 0;
+	errCnt = &errorCount;
  	rpmDuration = 0;
 	rpmTimerSetup(); 
 	rpmTimerEnable();		
 }
 
-unsigned int RPMDefaultCPS::getLatestMeasure() {
+unsigned int RPMDefaultCps::getLatestMeasure() {
 	if (rpmDuration==0)
 		return 0;
-	/* do not process values on rawValues directly because they may get changed (interrupt routine)*/
-	cli();
-	memcpy(storedValues,rawValues,NUMBER_OF_CYLINDERS*2);
-	sei();
-
-	/* Return an avarage value of full last rotation. It may be unnecessary, but my engine has a little unevenly spaced markers on the flywheel */
-	unsigned long duration=0;
-	for (unsigned char i=0;i<NUMBER_OF_CYLINDERS;i++) {
-		duration += (unsigned long)storedValues[i];	
-	}
-	duration = duration/5; 
 	// 64 = timer divider
-	return ((unsigned long)(60*F_CPU/64/NUMBER_OF_CYLINDERS)/((unsigned long)duration)); 
+	return ((unsigned long)(60*F_CPU/64/NUMBER_OF_CYLINDERS)/((unsigned long)rpmDuration)); 
 
 }
-unsigned int RPMDefaultCPS::getLatestRawValue() {
+unsigned int RPMDefaultCps::getLatestRawValue() {
 	return rpmDuration;
 }
 
-int RPMDefaultCPS::getInjectionTiming() {
+int RPMDefaultCps::getInjectionTiming() {
 	if (injectionBegin) {
 			unsigned int timerTicksPerDegree = rpmDuration / (360/NUMBER_OF_CYLINDERS);
 			// Calculate relative position, using *10 fixed point for internal presentation 
@@ -145,4 +118,3 @@ int RPMDefaultCPS::getInjectionTiming() {
 	}
 }
 
-#endif

@@ -95,7 +95,7 @@ public:
     static const unsigned char valueBoostPIDCorrection = 46;    
     static const unsigned char valueTimingPIDAmount = 47;
     static const unsigned char valueBoostTarget = 48; 
-    static const unsigned char valueN75DutyCycleBaseForPid = 49;   
+    static const unsigned char valueBoostValveDutyCycle = 49;   
     static const unsigned char valueCurrentTeeth = 50; 
     static const unsigned char valueBoostActuatorClipReason = 51;   
     static const unsigned char valueSRAPosition = 52;   
@@ -123,9 +123,9 @@ public:
     static const unsigned char nodeRunMode = 10;
 
     static const unsigned char nodeFuelTrim = 11;
-    static const unsigned char nodeFree1 = 12;
-    static const unsigned char nodeFree2 = 13;
-    static const unsigned char nodeFree3 = 14;
+    static const unsigned char nodeFuelMapSmoothness = 12;
+    static const unsigned char nodeInitialInjectionQuantity = 13;
+    static const unsigned char nodeQASync = 14;
     static const unsigned char nodeFree4 = 15;
     static const unsigned char nodeFree5 = 16;
  

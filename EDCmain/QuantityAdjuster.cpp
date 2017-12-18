@@ -19,6 +19,10 @@ void QuantityAdjuster::initialize() {
 
 static char qaCalls=0;
 
+void QuantityAdjuster::reset() {
+	integral=0;
+	error=0;
+}
 void QuantityAdjuster::update() {
 	if (qaCalls)
 		dtc.setError(DTC_TRAP_1);
@@ -44,9 +48,13 @@ void QuantityAdjuster::update() {
 
 	core.controls[Core::valueQAfeedbackSetpoint] = setPoint; 
 
-		// Read current position -- Set ADC prescaler to make analogRead faster?
-	core.controls[Core::valueQAfeedbackActual] = analogRead(PIN_ANALOG_QA_POS);      
-		// Then map it to 0..1023 range    
+	if (core.node[Core::nodeQASync].value 
+		&& !(core.controls[Core::valueRunMode] >= ENGINE_STATE_IDLE 
+			&& core.controls[Core::valueRunMode] <= ENGINE_STATE_LOW_RPM_RANGE )) {
+		core.controls[Core::valueQAfeedbackActual] = analogRead(PIN_ANALOG_QA_POS);      
+	}
+
+	// Then map it to 0..1023 range    
 	currentActuatorPosition =  map(core.controls[Core::valueQAfeedbackActual],
 		core.node[Core::nodeQAFeedbackMin].value,
 		core.node[Core::nodeQAFeedbackMax].value,

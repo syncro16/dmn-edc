@@ -19,6 +19,7 @@ const char confEditorMainScreen[][80] PROGMEM = {
 	"  <3> Map Editor",
 	"  <4> Output tests",
 	"  <5> Visualizer",	
+	"  <6> Boost Control Workbench",		
 	"  <.> Toggle status indicator (Status/RPM/TPS/Map)",    
 	" ",
 	"Send feedback to syncro16@outlook.com or visit http://dmn.kuulalaakeri.org/",
@@ -533,7 +534,7 @@ void ConfEditor::pageAdaptation() {
 	
 }
 
-void ConfEditor::pageMapEditor() {    
+void ConfEditor::pageMapEditor(bool compactMode = false) {    
 	bool updateCell = false;
 	bool updateCursor = false;
 	bool redrawView = false;
@@ -718,12 +719,14 @@ void ConfEditor::pageMapEditor() {
 		ansiGotoXy(xPad+xSpace+round((float)lastXpos*(float)((float)tableSizeX*(float)xSpace/255)),yPad-1);
 		Serial.print("v"); 
 
-		ansiGotoXy(xPad+xSpace,yPad+tableSizeY*ySpace+2);
-		printFromFlash(confEditorMapCurrentOutput);
-		printMapAxis(axisTypeResult,lastValue,1);
-		Serial.print(" / ");
-		Serial.print(lastValue10b);
-		ansiClearEol();
+		if (!compactMode) {
+			ansiGotoXy(xPad+xSpace,yPad+tableSizeY*ySpace+2);
+			printFromFlash(confEditorMapCurrentOutput);
+			printMapAxis(axisTypeResult,lastValue,1);
+			Serial.print(" / ");
+			Serial.print(lastValue10b);
+			ansiClearEol();
+		}
 		
 	}
 
@@ -764,7 +767,7 @@ void ConfEditor::refresh() {
 	if (!uiEnabled)
 		return;
 	
-	if (page>5)
+	if (page>6)
 		page = 0;
 	
 	if (!statusPrinted/* || statusIndex != 0*/) {
@@ -796,9 +799,62 @@ void ConfEditor::refresh() {
 		case 5:
 			core.controls[Core::valueOutputTestMode] = false;		
 			pageVisualizer();
-			break;						
+			break;	
+		case 6:
+			core.controls[Core::valueOutputTestMode] = false;		
+			pageBoostWorkBench();
+			break;									
 	}
 	keyPressed = -1;
 	tick++;
 }
 
+
+
+const char BWBheader[] PROGMEM = "          0---------------64-------------128-------------192------------255";
+//                                          0123456789012345678901234567890123456789012345678901234567890123456789
+const char BWBpid[] PROGMEM = "   PID:  p/P:      i/I:      d/D:                 s/S(peed)      b/B(ias)       ";
+const char BWBtexts[][32] PROGMEM = {"Base:","PID:","Total:","Map:","Setpoint:","RPM:","IQ:","peak:"};
+
+
+void ConfEditor::pageBoostWorkBench() {  
+
+	mapIdx = Core::mapIdxTurboControlMap;
+	pageMapEditor(true);
+
+	ansiGotoXy(1,21);
+	printFromFlash(BWBpid);
+	ansiGotoXy(1,23);
+	printFromFlash(BWBheader);
+
+	static unsigned char oldBVDC;
+	if (1) {
+		ansiGotoXy(1,24);
+		printFromFlash(BWBtexts[0]);
+
+	}
+	if (core.controls[Core::valueBoostValveDutyCycle]/4 != oldBVDC) {
+		oldBVDC = core.controls[Core::valueBoostValveDutyCycle]/4;
+		ansiGotoXy(11,24);
+		for (char i=0;i<oldBVDC;i++)
+			Serial.print("*");
+		ansiClearEol();
+		ansiGotoXy(76,24);
+		printIntWithPadding(core.controls[Core::valueBoostValveDutyCycle],3,' ');
+		oldBVDC--;
+		
+	}
+	/*
+	p/P: xxx i/I: xxx d/D: xxx           s/S(peed) xxx b/B(ias) 
+		  nn       nn       nn 
+
+	Base:   ****************************************  nn
+	PID:                              --------------  nn
+	Total:  **************************                nn
+
+	Map :    **********************                    nn (peak:0)
+	SetPoint:    **********************                    nn	
+	RPM:    3300
+	IQ:		333
+	 */
+}

@@ -13,7 +13,7 @@ private:
     unsigned char runningStage;
     float oldOutput;
     float error;
-    float integral;
+    volatile float integral;
     float errorOld;
     float derivate;
     volatile char statusBits;
@@ -46,6 +46,7 @@ public:
     void initialize();
     void setPosition(int val);
     void triggerHit();
+    void reset();
 };
 
 extern Core core;

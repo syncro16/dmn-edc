@@ -58,30 +58,28 @@ Pump head wires
 5-ftemp -
 6-ftemp + (2300ohm 23C)
 
+todo:
+- sync qa pos reading with rpm sensor on runmode 100 ??
+- or smooth qa signal with RC circuit?
+- advance off before idling
+- check if interrupt service scheluder is blocking rpm interrupt ? -> random errors
+- initial injection quantity before starting
 
 */
-#include "defines.h"
+#include "RPMDefaultCps.h"
+//#include "RPMCustomCps.h"
 #include "ConfEditor.h"
 #include "Core.h"
 #include "QuantityAdjuster.h"
 #include "TimerThree.h"
 #include "utils.h"
 #include "DTC.h"
+#include "defines.h"
 #include "MemoryFree.h"
 #include "PID.h"
 
-
-#ifdef RPM_SENSOR_TYPE_DEFAULT
-#include "RPMDefaultCPS.h"
-RPMDefaultCPS rpm;
-#endif
-
-#ifdef RPM_SENSOR_TYPE_CUSTOM
-#include "RPMCustomCPS.h"
-RPMCustomCPS rpm;
-#endif
-
-
+// Crankshaft position sensor decoding, use RPMDefaultCps or RPMHiDensityCps 
+static RPMDefaultCps rpm;
 
 // VP37 Quantity adjuster module
 static QuantityAdjuster adjuster;
@@ -275,8 +273,11 @@ void refreshSlowSensors() {
 */
 void doTimingControl() {
 	if (core.controls[Core::valueOutputTestMode] != 0 || core.node[Core::nodeTimingMethod].value == 0) {	
-		analogWrite(PIN_PWM_TIMING_SOLENOID,core.controls[Core::valueEngineTimingDutyCycle]);	
-
+		if (core.controls[Core::valueRunMode]>=ENGINE_STATE_IDLE) {
+			analogWrite(PIN_PWM_TIMING_SOLENOID,core.controls[Core::valueEngineTimingDutyCycle]);	
+		} else {
+			analogWrite(PIN_PWM_TIMING_SOLENOID,0);				
+		}
 		return;
 	}
 
@@ -334,6 +335,8 @@ void doBoostControl() {
 	if (core.controls[Core::valueOutputTestMode] != 0 || core.node[Core::nodeBoostAdjusting].value == 0) {	
 	//		SRA.setPosition(core.controls[Core::valueN75DutyCycle]);
 	//		SRA.calculate();
+		// Usually n75 is responsive only over certain PWM range, so remap the 0..255 value 
+
 		analogWrite(PIN_PWM_BOOST_SOLENOID,core.controls[Core::valueN75DutyCycle]);
 		return;
 	}
@@ -361,7 +364,7 @@ void doBoostControl() {
 
 	/* TODO: add check for overboost situations and set up DTC and safe mode */
 
-	core.controls[Core::valueN75DutyCycleBaseForPid] =  mapLookUp(core.maps[Core::mapIdxTurboControlMap],
+	core.controls[Core::valueBoostValveDutyCycle] =  mapLookUp(core.maps[Core::mapIdxTurboControlMap],
 		core.controls[Core::valueRPM8bit],
 		core.controls[Core::valueFuelAmount8bit]);	
 
@@ -399,7 +402,7 @@ void doBoostControl() {
 				core.controls[Core::valueBoostPIDCorrection] = -core.controls[Core::valueBoostPIDCorrection];
 			}
 
-			idx = core.controls[Core::valueN75DutyCycleBaseForPid] + core.controls[Core::valueBoostPIDCorrection];
+			idx = core.controls[Core::valueBoostValveDutyCycle] + core.controls[Core::valueBoostPIDCorrection];
 			if (idx<0) {
 				idx = 0;
 			}
@@ -452,10 +455,10 @@ void doBoostControl() {
 			out = 255-mapLookUp(core.maps[Core::mapIdxActuatorTension],idx,0); 
 
 		   	// scale value
-		   	joo = map(out,0,255,0,core.controls[Core::valueN75DutyCycleBaseForPid]);   	
+		   	joo = map(out,0,255,0,core.controls[Core::valueBoostValveDutyCycle]);   	
 		   	*/
 		   	// scale value
-		   	joo = map(out,0,255,0,core.controls[Core::valueN75DutyCycleBaseForPid]+core.controls[Core::valueBoostPIDCorrection]);   		   	
+		   	joo = map(out,0,255,0,core.controls[Core::valueBoostValveDutyCycle]+core.controls[Core::valueBoostPIDCorrection]);   		   	
 		   	core.controls[Core::valueN75DutyCycle] = joo;
 		   	break;
 		   }
@@ -504,129 +507,147 @@ especially if over 8bit variables.
 */
 
 void refreshFastSensors() {
-	int fuelAmount;
-	static unsigned int runCount;
+	int fuelAmount=0;
+//	static unsigned int runCount;
 
 	/* call rpm measurement function which converts internal timer state to rotation per minute (and stores it to control structure) */
-	rpm.measure();
-	
+	rpm.measure();	
+
+	if (core.controls[Core::valueEngineRPMFiltered] == 0) {
+		core.controls[Core::valueRunMode]=ENGINE_STATE_STOPPED;
+	}
+	if (core.controls[Core::valueRunMode] == ENGINE_STATE_STOPPED && 
+		core.controls[Core::valueBatteryVoltage] == 0) {
+		// reset PID control when power is off/
+		adjuster.reset();
+	}
+
 	if (core.controls[Core::valueEngineRPMFiltered] == 0 && core.node[Core::nodeFuelCutAtStall].value == 1) {
-		if (runCount > FAST_START_DELAY)
-		safetyStop = true;
-		if (runCount<255)
-		runCount++;
-		core.controls[Core::valueRunMode]=0; // Stopped  		
-	}
-
-	if (safetyStop) {
-		// When engine is not running, do not inject anything to prevent runaway situation when RPM signal is missing and engine is running
-		fuelAmount = 0;
-		core.controls[Core::valueRunMode]=0; // Stopped  
-	} else { 
-		safetyStop = false;
-		unsigned int rpm;
-
-		cli();
-		rpm = core.controls[Core::valueEngineRPMFiltered];
-		sei();
-		int rpmCorrected = mapValues(rpm,0,core.node[Core::nodeControlMapScaleRPM].value);   
-
-		core.controls[Core::valueRPM8bit] = rpmCorrected;
-/*
-		if (rpm<350) {
-			core.controls[Core::valueRunMode] = 1; // starting 
-		} else {
-			if (core.controls[Core::valueRunMode]<98)
-				core.controls[Core::valueRunMode]++;
-				}*/
-/*
-				if (core.controls[Core::valueRunMode] == 0) {
-			// Saturate PID control before start
-			// core.controls[Core::valueIdlePIDCorrection] = core.node[Core::nodeIdleMinFuel].value*2;
-			}
-			*/
-
-	// Use or switch to PID idle control if gas is not pressed and RPM below threshold. When PID is activated, it is switched of only when gas is pressed (no RPM threshold check)
-	if (/*(core.controls[Core::valueRunMode] == 2 ||*/  
-			/* rpm<(core.node[Core::nodeIdleSpeedTarget].value+400)) && */
-		core.controls[Core::valueTPSActual] == 0) {
-
-		rpmIdle = mapValues(rpm,0,1024);
-
-		if (core.node[Core::nodeIdleAdjusting].value && rpm>270) {
-			// TODO fix valueRunMode!!
-			fuelAmount = mapLookUp10bit(core.maps[Core::mapIdxIdleMap],
-				rpmIdle,
-				core.controls[Core::valueTPSActual]);	
-//			idleMinFuel = core.node[Core::nodeIdleMinFuel].value; // JOOSE
-//			idleMaxFuel = core.node[Core::nodeIdleMaxFuel].value;
-			core.controls[Core::valueRunMode] = 2; // pid idle 
-//			idlePidControl.setPosition(core.node[Core::nodeIdleSpeedTarget].value);
-//			idlePidControl.calculate();
-			fuelAmount += core.controls[Core::valueIdlePIDCorrection];
-			idleLastCalculatedFuelAmount = fuelAmount;
-		} else {
-			// Use idle & cold start map.
-			fuelAmount = mapLookUp10bit(core.maps[Core::mapIdxIdleMap],
-						rpmIdle,
-						core.controls[Core::valueTPSActual]);
-			
-			idleLastCalculatedFuelAmount = fuelAmount;
-			core.controls[Core::valueRunMode] = 1; // starting 
-
-			// Sets up the integral part of PID calculation
-			// idlePidControl.setPositionHint(fuelAmount);
-		}					 
-
+		core.controls[Core::valueRunMode]=ENGINE_STATE_STOPPED; // Stopped  		
+		// fuelAmount = 0;
+		fuelAmount = core.node[Core::nodeInitialInjectionQuantity].value;
 	} else {
-		// Return upscaled interpolated value of range 0..1023 according to fuel map data (0..255)
-		core.controls[Core::valueRunMode]=100; // Engine running 
+		int rpmCorrected = mapValues(core.controls[Core::valueEngineRPMFiltered],0,core.node[Core::nodeControlMapScaleRPM].value);   
+		core.controls[Core::valueRPM8bit] = rpmCorrected;
 
-		// Base injection quantity 
-		// TODO::: generate fuelMapLookup which uses upscaled fuel trim values before final interpolation
 
-		core.controls[Core::valueFuelBaseAmount] = mapLookUp10bit(core.maps[Core::mapIdxFuelMap],
-			rpmCorrected,
-			core.controls[Core::valueTPSActual]);
+		// Use or switch to PID idle control if gas is not pressed and RPM below threshold. When PID is activated, it is switched of only when gas is pressed (no RPM threshold check)
+		if (core.controls[Core::valueEngineRPMFiltered]<(core.node[Core::nodeIdleSpeedTarget].value+400) &&
+			core.controls[Core::valueTPSActual] == 0) {
 
-		/* Limit enrichment amount to by REQUESTED boost level (turbo control table), not the actual */
-		unsigned char boostRequlated = core.controls[Core::valueBoostPressure];
+			core.controls[Core::valueRunMode]=ENGINE_STATE_IDLE;
 
-		if (boostRequlated > core.controls[Core::valueBoostTarget])
-			boostRequlated = core.controls[Core::valueBoostTarget];
+			rpmIdle = mapValues(core.controls[Core::valueEngineRPMFiltered],0,1024);
 
-		// Enrichment based on boost, amount is TPS% * fuel enrichment map value to smooth apply of enrichment
-		core.controls[Core::valueFuelEnrichmentAmount] = 
-		((unsigned long)(mapLookUp10bit(core.maps[Core::mapIdxBoostMap],
+			if (core.controls[Core::valueEngineRPMFiltered]<=ENGINE_RPM_CRANKING_LIMIT) {
+				core.controls[Core::valueRunMode]=ENGINE_STATE_CRANKING;
+					// Use idle & cold start map.
+					fuelAmount = mapLookUp10bit(core.maps[Core::mapIdxIdleMap],
+								rpmIdle,
+								core.controls[Core::valueTempEngine]);
+					
+					idleLastCalculatedFuelAmount = fuelAmount;
+					core.controls[Core::valueRunMode] = ENGINE_STATE_CRANKING; // starting 
+			} else {
+				if (core.node[Core::nodeIdleAdjusting].value) {
+					// TODO fix valueRunMode!!
+					fuelAmount = mapLookUp10bit(core.maps[Core::mapIdxIdleMap],
+						rpmIdle,
+						core.controls[Core::valueTempEngine]);	
+		//			idleMinFuel = core.node[Core::nodeIdleMinFuel].value; // JOOSE
+		//			idleMaxFuel = core.node[Core::nodeIdleMaxFuel].value;
+					core.controls[Core::valueRunMode] = ENGINE_STATE_PID_IDLE; // pid idle 
+		//			idlePidControl.setPosition(core.node[Core::nodeIdleSpeedTarget].value);
+		//			idlePidControl.calculate();
+					fuelAmount += core.controls[Core::valueIdlePIDCorrection];
+					idleLastCalculatedFuelAmount = fuelAmount;
+				} else {
+					// Use idle & cold start map.
+					fuelAmount = mapLookUp10bit(core.maps[Core::mapIdxIdleMap],
+								rpmIdle,
+								core.controls[Core::valueTempEngine]);
+					
+					idleLastCalculatedFuelAmount = fuelAmount;
+					core.controls[Core::valueRunMode] = ENGINE_STATE_IDLE; // starting 
+
+					// Sets up the integral part of PID calculation
+					// idlePidControl.setPositionHint(fuelAmount);
+				}	
+			}				 
+
+		} else {
+			// engine running and not idle
+			int rpmCorrected = mapValues(core.controls[Core::valueEngineRPMFiltered],0,core.node[Core::nodeControlMapScaleRPM].value);   
+
+            core.controls[Core::valueRPM8bit] = rpmCorrected;
+
+			if (core.controls[Core::valueEngineRPMFiltered]<ENGINE_STATE_HIGH_RPM_RANGE) {
+				core.controls[Core::valueRunMode] = ENGINE_STATE_LOW_RPM_RANGE; // starting 
+			} else {
+				core.controls[Core::valueRunMode] = ENGINE_STATE_HIGH_RPM_RANGE; // starting 
+			}
+			// Return upscaled interpolated value of range 0..1023 according to fuel map data (0..255)
+
+
+			// Base injection quantity 
+			// TODO::: generate fuelMapLookup which uses upscaled fuel trim values before final interpolation
+
+			core.controls[Core::valueFuelBaseAmount] = mapLookUp10bit(core.maps[Core::mapIdxFuelMap],
 				rpmCorrected,
-				boostRequlated)) 
-			*(unsigned  long)(core.controls[Core::valueTPSActual])
-			/ (unsigned long)256);
+				core.controls[Core::valueTPSActual]);
 
-		// Smoke limit map (TODO: add wide band lambda support and auto-map feature)
-		//core.controls[Core::valueFuelLimitAmount] = mapLookUp10bit(core.maps[Core::mapIdxMaxFuelMap],
-		//		rpmCorrected,
-		//		core.controls[Core::valueBoostPressure]);	
+			/* Limit enrichment amount to by REQUESTED boost level (turbo control table), not the actual */
+			unsigned char boostRequlated = core.controls[Core::valueBoostPressure];
 
-		fuelAmount = core.controls[Core::valueFuelBaseAmount];
-	
-		// Smooth transtion from idle
-		if (idleLastCalculatedFuelAmount>fuelAmount) 
-			fuelAmount = idleLastCalculatedFuelAmount;
+			if (boostRequlated > core.controls[Core::valueBoostTarget])
+				boostRequlated = core.controls[Core::valueBoostTarget];
 
-		if (fuelAmount) {
-			// Enrichment amount is TPS% * fuel enrichment map value to smooth apply of enrichment
-			fuelAmount += core.controls[Core::valueFuelEnrichmentAmount];
+			// Enrichment based on boost, amount is TPS% * fuel enrichment map value to smooth apply of enrichment
+			core.controls[Core::valueFuelEnrichmentAmount] = 
+			((unsigned long)(mapLookUp10bit(core.maps[Core::mapIdxBoostMap],
+					rpmCorrected,
+					boostRequlated)) 
+				*(unsigned  long)(core.controls[Core::valueTPSActual])
+				/ (unsigned long)256);
+
+			// Smoke limit map (TODO: add wide band lambda support and auto-map feature)
+			//core.controls[Core::valueFuelLimitAmount] = mapLookUp10bit(core.maps[Core::mapIdxMaxFuelMap],
+			//		rpmCorrected,
+			//		core.controls[Core::valueBoostPressure]);	
+
+			fuelAmount = core.controls[Core::valueFuelBaseAmount];
+		
+			// Smooth transtion from idle
+//			if (idleLastCalculatedFuelAmount>fuelAmount) 
+//				fuelAmount = idleLastCalculatedFuelAmount;
+
+			if (fuelAmount) {
+				// Enrichment amount is TPS% * fuel enrichment map value to smooth apply of enrichment
+				fuelAmount += core.controls[Core::valueFuelEnrichmentAmount];
+			}
+
+//			if (fuelAmount>core.controls[Core::valueFuelLimitAmount])	
+//				fuelAmount = core.controls[Core::valueFuelLimitAmount];		
+			}
 		}
 
-		if (fuelAmount>core.controls[Core::valueFuelLimitAmount])	
-		fuelAmount = core.controls[Core::valueFuelLimitAmount];		
+	if (core.node[Core::nodeFuelMapSmoothness].value>0) {
+		float a1,a2,v1,v2,r;
+		a1 = core.controls[Core::valueFuelAmount];
+		a2 = fuelAmount;
+		v1 = (float)(core.node[Core::nodeFuelMapSmoothness].value)/100.0;
+		v2 = (float)(100-core.node[Core::nodeFuelMapSmoothness].value)/100.0;
+		r = (a1*v1+a2*v2);
 
-		}
+		core.controls[Core::valueFuelAmount] = r;	
+		core.controls[Core::valueFuelAmount8bit] = r/4;
+	} else {
+		core.controls[Core::valueFuelAmount] = fuelAmount;	
+		core.controls[Core::valueFuelAmount8bit] = fuelAmount/4;
 	}
-	core.controls[Core::valueFuelAmount] = fuelAmount;	
-	core.controls[Core::valueFuelAmount8bit] = fuelAmount/4;
-	adjuster.setPosition(fuelAmount);
+
+	adjuster.setPosition(core.controls[Core::valueFuelAmount]);
+
 }
 
 void doRelayControl() {
@@ -637,7 +658,7 @@ void doRelayControl() {
 const char main_pressAKeyString[] PROGMEM = " bytes free.\r\n\r\nPress a key for configuration interface ...";
 
 void setup() {
-	//pinMode(PIN_INPUT_RPM,INPUT_PULLUP);
+	pinMode(PIN_INPUT_RPM,INPUT_PULLUP);
 	pinMode(PIN_INPUT_NEEDLELIFTSENSOR,INPUT_PULLUP);
 
 	pinMode(PIN_ANALOG_QA_POS,INPUT);
@@ -706,11 +727,11 @@ void setup() {
 	
 	interruptHandlerArray[2].handler=refreshFastSensors; 
 	interruptHandlerArray[2].divider=4;
-	//interruptHandlerArray[3].handler=refreshSlowSensors; 
-	//interruptHandlerArray[3].divider=16;
+	interruptHandlerArray[3].handler=refreshSlowSensors; 
+	interruptHandlerArray[3].divider=32;
 	
-//RPM	attachInterrupt(0, rpmTrigger, RISING);  // Interrupt 0 -- PIN2 -- LM1815 gated output 
-//RPM	attachInterrupt(1, needleTrigger,FALLING );  // From voltage comparator, default +5v
+//	attachInterrupt(0, rpmTrigger, RISING);  // Interrupt 0 -- PIN2 -- LM1815 gated output 
+//	attachInterrupt(1, needleTrigger,FALLING );  // From voltage comparator, default +5v
 	
 	// Timer info - see: http://sobisource.com/?p=195
 
@@ -731,7 +752,7 @@ void setup() {
 		confeditor.setSystemStatusMessage(msg);
 	}
 
-	setupQATimers();
+	setupQATimers(); 
 	rpm.init();
 
 	Serial.print("... ");	
@@ -766,6 +787,7 @@ char loopCount = 0;
 
 
 void loop() {
+///	adjuster.update();
 
 
 	//boolean printValues = 0;
@@ -773,7 +795,7 @@ void loop() {
 //	static unsigned char testMapX = 0;
 //	static unsigned char testMapY = 0;
 
-	refreshSlowSensors();
+//	refreshSlowSensors();
 	doBoostControl();
 	doTimingControl();
 	doRelayControl();
@@ -901,13 +923,11 @@ void loop() {
 	} 
 
 	// Handle errors (generated by interrupt service)
-//RPM
-/*	
-	if (unplausibleRpm) {
+	if (rpm.getError()) {
 		dtc.setError(DTC_RPM_UNPLAUSIBLE_SIGNAL);
-		unplausibleRpm = 0;
 		// TODO: switch over backup signal (needlelift) after nnn failing signals  
 	}
+	/*
 	if (unplausibleNeedleLiftSensor) {
 		//dtc.setError(DTC_NEEDLESENSOR_UNPLAUSIBLE_SIGNAL);
 		unplausibleNeedleLiftSensor = 0;

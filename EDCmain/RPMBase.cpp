@@ -22,8 +22,14 @@ void RPMBase::measure() {
 	core.controls[Core::valueEngineRPMFiltered] = getLatestMeasure();
 	core.controls[Core::valueEngineRPM] = getLatestMeasure();
 	core.controls[Core::valueEngineRPMRaw] = getLatestRawValue();
-
 }
+
+unsigned char RPMBase::getError() {
+	unsigned char ret = errorCount;
+	errorCount=0;
+	return ret;
+}
+
 
 
 

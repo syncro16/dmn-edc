@@ -1,6 +1,5 @@
-#ifdef RPM_SENSOR_TYPE_DEFAULT
-#ifndef RPMDEFAULTCPS_H
-#define RPMDEFAULTCPS_H
+//#ifndef RPMDEFAULTCPS_H
+//#define RPMDEFAULTCPS_H
 
 #include "RPMBase.h"
 #include "Arduino.h"
@@ -15,11 +14,8 @@
 #define RPMTIMER_DURATION_TO_RPM(x) ((unsigned long)(60*F_CPU/64/NUMBER_OF_CYLINDERS)/((unsigned long)x))  // 250 000hz frequency (max. 65535 ticks per teeth ~45rpm)
 #define RPMTIMER_MIN_DURATON 400 // 7500rpm
 static volatile unsigned int injectionBegin;
-static volatile unsigned int rawValues[NUMBER_OF_CYLINDERS];
 
-class RPMDefaultCPS : public RPMBase {
-	private:
-	unsigned int storedValues[NUMBER_OF_CYLINDERS];
+class RPMDefaultCps : public RPMBase {
 	public:
 	void init();
 	unsigned int getLatestMeasure();
@@ -30,5 +26,5 @@ class RPMDefaultCPS : public RPMBase {
 
 };
 
-#endif
-#endif
+
+//#endif
