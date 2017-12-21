@@ -273,12 +273,20 @@ void refreshSlowSensors() {
 */
 void doTimingControl() {
 	if (core.controls[Core::valueOutputTestMode] != 0 || core.node[Core::nodeTimingMethod].value == 0) {	
+			analogWrite(PIN_PWM_TIMING_SOLENOID,0);					
+		return;
+	}
+	if (core.node[Core::nodeTimingMethod].value == 1) {
 		if (core.controls[Core::valueRunMode]>=ENGINE_STATE_IDLE) {
+			core.controls[Core::valueEngineTimingDutyCycle] = mapLookUp(core.maps[Core::mapIdxOpenLoopAdvanceMap],
+					core.controls[Core::valueRPM8bit],
+					core.controls[Core::valueFuelAmount8bit]);				
 			analogWrite(PIN_PWM_TIMING_SOLENOID,core.controls[Core::valueEngineTimingDutyCycle]);	
 		} else {
 			analogWrite(PIN_PWM_TIMING_SOLENOID,0);				
-		}
-		return;
+			core.controls[Core::valueEngineTimingDutyCycle]=0;
+		}	
+		return;	
 	}
 
 	if (core.node[Core::nodeTimingMethod].value == 2) {
@@ -309,14 +317,11 @@ void doTimingControl() {
 
 		// for ui
 		core.node[Core::nodeEngineTiming].value = core.controls[Core::valueEngineTimingTarget];
-	} else {
-		/* open loop mode */
-		core.controls[Core::valueEngineTimingDutyCycle] = mapLookUp(core.maps[Core::mapIdxOpenLoopAdvanceMap],
-				core.controls[Core::valueRPM8bit],
-				core.controls[Core::valueFuelAmount8bit]);			
-	}
+		analogWrite(PIN_PWM_TIMING_SOLENOID,core.controls[Core::valueEngineTimingDutyCycle]);	
 
-	analogWrite(PIN_PWM_TIMING_SOLENOID,core.controls[Core::valueEngineTimingDutyCycle]);	
+		return;
+	} 
+
 }
 
 /*
@@ -404,13 +409,14 @@ void doBoostControl() {
 			core.controls[Core::valueBoostPIDComponentD] = boostPidControl.lastD;			
 
 			idx = core.controls[Core::valueBoostValveDutyCycle] + core.controls[Core::valueBoostPIDCorrection];
-			core.controls[Core::valueBoostCalculatedAmount] = idx;
 			if (idx<0) {
 				idx = 0;
 			}
 			if (idx>255) {
 				idx = 255;
 			}
+			core.controls[Core::valueBoostCalculatedAmount] = idx;
+			
 			out = mapLookUp(core.maps[Core::mapIdxActuatorTension],idx,0); 
 
 			core.controls[Core::valueN75DutyCycle] = out;
@@ -528,7 +534,7 @@ void refreshFastSensors() {
 	if (core.controls[Core::valueEngineRPMFiltered] == 0 && core.node[Core::nodeFuelCutAtStall].value == 1) {
 		core.controls[Core::valueRunMode]=ENGINE_STATE_STOPPED; // Stopped  		
 		// fuelAmount = 0;
-		fuelAmount = core.node[Core::nodeInitialInjectionQuantity].value;
+		fuelAmount = core.node[Core::nodeInitial5Quantity].value;
 	} else {
 		int rpmCorrected = mapValues(core.controls[Core::valueEngineRPMFiltered],0,core.node[Core::nodeControlMapScaleRPM].value);   
 		core.controls[Core::valueRPM8bit] = rpmCorrected;
@@ -621,8 +627,8 @@ void refreshFastSensors() {
 			fuelAmount = core.controls[Core::valueFuelBaseAmount];
 		
 			// Smooth transtion from idle
-//			if (idleLastCalculatedFuelAmount>fuelAmount) 
-//				fuelAmount = idleLastCalculatedFuelAmount;
+   			if (idleLastCalculatedFuelAmount>fuelAmount) 
+				fuelAmount = idleLastCalculatedFuelAmount;
 
 			if (fuelAmount) {
 				// Enrichment amount is TPS% * fuel enrichment map value to smooth apply of enrichment

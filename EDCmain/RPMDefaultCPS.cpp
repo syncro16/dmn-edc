@@ -66,11 +66,27 @@ ISR(TIMER1_COMPA_vect)
 
 
 volatile unsigned char *errCnt;
+volatile long rpmAvg;
 
 void rpmTrigger() { 
 	cli();
 	unsigned int dur = TCNT1;
-	rpmDuration = dur;
+	/*if (core.controls[Core::valueRunMode] >= ENGINE_STATE_IDLE ) {
+		// allow 10% error, otherwise 
+		long maxErr = dur/10;
+		if (abs((long)rpmAvg-dur)>maxErr) {
+			errCnt++;
+			sei();
+			rpmTimerEnable();
+			return;	
+		} else {
+			rpmAvg += (rpmAvg*3+dur)/4;
+		}
+	} else {
+		rpmAvg = dur;
+	}
+	*/
+	rpmDuration = dur; // store duration to be calculated as RPM later
 	injectionBegin = 0;
 	sei();
 	rpmTimerEnable();
@@ -84,6 +100,7 @@ void rpmTrigger() {
 		core.controls[Core::valueQAfeedbackActual] = (core.controls[Core::valueQAfeedbackActual]+analogRead(PIN_ANALOG_QA_POS))/2;     
 		sei();
 	}
+
 }
 
 // Class methods

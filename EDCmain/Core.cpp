@@ -157,8 +157,8 @@ Core::Core() {
 
 	node[nodeBoostAdjusting] =  (nodeStruct) {0x102E,0,0,4,1,valueBoostValveDutyCycle,valueBoostPIDCorrection,NODE_PROPERTY_EDITABLE,VALUE_INT};      
 	node[nodeBoostSpeed] =      (nodeStruct) {0x102F,5,1,200,10,valueNone,valueNone,NODE_PROPERTY_EDITABLE,VALUE_INT};      
-	node[nodeBoostKp] =         (nodeStruct) {0x1030,5,1,2000,1,valueNone,valueNone,NODE_PROPERTY_EDITABLE,VALUE_INT};      
-	node[nodeBoostKi] =         (nodeStruct) {0x1031,5,1,2000,1,valueNone,valueNone,NODE_PROPERTY_EDITABLE,VALUE_INT};      
+	node[nodeBoostKp] =         (nodeStruct) {0x1030,13,1,2000,1,valueNone,valueNone,NODE_PROPERTY_EDITABLE,VALUE_INT};      
+	node[nodeBoostKi] =         (nodeStruct) {0x1031,6,1,2000,1,valueNone,valueNone,NODE_PROPERTY_EDITABLE,VALUE_INT};      
 	node[nodeBoostKd] =         (nodeStruct) {0x1032,0,0,2000,1,valueNone,valueNone,NODE_PROPERTY_EDITABLE,VALUE_INT};  
 	node[nodeBoostBias] =    	(nodeStruct) {0x1038,100,1,200,1,valueNone,valueNone,NODE_PROPERTY_EDITABLE,VALUE_INT};  
 	node[nodeBoostPIDRange] =   (nodeStruct) {0x1039,20,1,200,1,valueNone,valueBoostPIDCorrection,NODE_PROPERTY_EDITABLE,VALUE_INT};  

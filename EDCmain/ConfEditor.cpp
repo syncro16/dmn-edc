@@ -943,8 +943,8 @@ void ConfEditor::pageBoostWorkBench() {
 	if (redrawView || core.controls[Core::valueBoostCalculatedAmount]/4 != oldBCA) {
 		oldBCA = core.controls[Core::valueBoostCalculatedAmount]/4;
 		ansiGotoXy(11,26);
-		for (char i=0;i<oldBCA;i++)
-			Serial.print("*");
+		for (unsigned char i=0;i<oldBCA;i++)
+			Serial.print("=");
 		ansiClearEol();
 		ansiGotoXy(76,26);
 		printIntWithPadding(core.controls[Core::valueBoostCalculatedAmount],4,' ');	
@@ -955,7 +955,7 @@ void ConfEditor::pageBoostWorkBench() {
 		oldMap = core.controls[Core::valueBoostPressure]/4;
 		ansiGotoXy(11,27);
 		for (char i=0;i<oldMap;i++)
-			Serial.print("*");
+			Serial.print("M");
 		ansiClearEol();
 	}
 
@@ -965,7 +965,7 @@ void ConfEditor::pageBoostWorkBench() {
 		oldMapSetpoint = core.controls[Core::valueBoostTarget]/4;
 		ansiGotoXy(11,28);
 		for (char i=0;i<oldMapSetpoint;i++)
-			Serial.print("*");
+			Serial.print("S");
 		ansiClearEol();
 	}
 

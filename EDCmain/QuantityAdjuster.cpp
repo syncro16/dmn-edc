@@ -48,9 +48,10 @@ void QuantityAdjuster::update() {
 
 	core.controls[Core::valueQAfeedbackSetpoint] = setPoint; 
 
-	if (core.node[Core::nodeQASync].value 
-		&& !(core.controls[Core::valueRunMode] >= ENGINE_STATE_IDLE 
-			&& core.controls[Core::valueRunMode] <= ENGINE_STATE_LOW_RPM_RANGE )) {
+	if (!core.node[Core::nodeQASync].value 
+		|| (core.node[Core::nodeQASync].value 
+			&& !(core.controls[Core::valueRunMode] >= ENGINE_STATE_IDLE 
+				&& core.controls[Core::valueRunMode] <= ENGINE_STATE_LOW_RPM_RANGE ))) {
 		core.controls[Core::valueQAfeedbackActual] = analogRead(PIN_ANALOG_QA_POS);      
 	}
 
