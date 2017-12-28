@@ -26,31 +26,31 @@ static inline void rpmTimerDisable() __attribute__((always_inline));
 void rpmTrigger();
 
 static inline void rpmTimerSetup()  {
-	cli();
+//	cli();
 	TCCR1A = 0; 
 	TCCR1B = 0; 
 	TCNT1 = 0;
 	OCR1A = 0xffff;
 
  	TIMSK1 |= (1 << OCIE1A); // enable timer compare interrupt
- 	sei();
+ //	sei();
 	//attachInterrupt(0, rpmTrigger, RISING);  // Interrupt 0 -- PIN2 -- LM1815 gated output 
 	attachInterrupt(0, rpmTrigger, FALLING);  // Interrupt 0 -- PIN2 -- Cherry GS sensor 
 
  }
 
  static inline void rpmTimerEnable() {
- 	cli();
+// 	cli();
  	TCNT1 = 0;
  	TCCR1B = 11; // WGM12 = 8 +CS11 = 2+CS10 = 1
- 	sei();
+ //	sei();
  }
 
  static void rpmTimerDisable() {
- 	cli();
+ //	cli();
  	TCCR1A = 0;
  	TCCR1B = 0;
- 	sei();
+ //	sei();
  	rpmDuration = 0;
  }
  
@@ -69,7 +69,6 @@ volatile unsigned char *errCnt;
 volatile long rpmAvg;
 
 void rpmTrigger() { 
-	cli();
 	unsigned int dur = TCNT1;
 	/*if (core.controls[Core::valueRunMode] >= ENGINE_STATE_IDLE ) {
 		// allow 10% error, otherwise 
@@ -88,7 +87,6 @@ void rpmTrigger() {
 	*/
 	rpmDuration = dur; // store duration to be calculated as RPM later
 	injectionBegin = 0;
-	sei();
 	rpmTimerEnable();
 
 	/* This reads (and smoothes) Quantity Adjuster position syncronized with RPM, 
@@ -96,9 +94,7 @@ void rpmTrigger() {
 	if (core.node[Core::nodeQASync].value 
 		&& (core.controls[Core::valueRunMode] >= ENGINE_STATE_IDLE 
 			&& core.controls[Core::valueRunMode] <= ENGINE_STATE_LOW_RPM_RANGE )) {
-		cli();
 		core.controls[Core::valueQAfeedbackActual] = (core.controls[Core::valueQAfeedbackActual]+analogRead(PIN_ANALOG_QA_POS))/2;     
-		sei();
 	}
 
 }
@@ -116,8 +112,10 @@ unsigned int RPMDefaultCps::getLatestMeasure() {
 	if (rpmDuration==0)
 		return 0;
 	// 64 = timer divider
-	return ((unsigned long)(60*F_CPU/64/NUMBER_OF_CYLINDERS)/((unsigned long)rpmDuration)); 
-
+	cli();
+	unsigned int ret=((unsigned long)(60*F_CPU/64/NUMBER_OF_CYLINDERS)/((unsigned long)rpmDuration)); 
+	sei();
+	return ret;
 }
 unsigned int RPMDefaultCps::getLatestRawValue() {
 	return rpmDuration;

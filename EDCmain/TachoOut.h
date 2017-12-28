@@ -5,7 +5,7 @@ class TachoOut {
 public:
     TachoOut();
     void init();
-    void setRpm(int rpm);
+    void setRpm(unsigned int rpm);
     void updateAutomatically();
 };
 

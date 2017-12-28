@@ -80,7 +80,18 @@ const char nodeDescription[][55] PROGMEM = {
 	"Actuator: hysteresis", // 70
 	"Actuator: motor direction", // 71
  	"Actuator: stepping delay (0=continuous loop)", // 72
-
+	"Temp Sensor, engine: value",
+	"Temp Sensor, engine: B-coefficient",
+	"Temp Sensor, engine: nominal resistance",
+	"Temp Sensor, engine: nominal temperature",
+	"Temp Sensor, intake: value",
+	"Temp Sensor, intake: B-coefficient",
+	"Temp Sensor, intake: nominal resistance",
+	"Temp Sensor, intake: nominal temperature",
+	"Temp Sensor, fuel: value",
+	"Temp Sensor, fuel: B-coefficient",
+	"Temp Sensor, fuel: nominal resistance",
+	"Temp Sensor, fuel: nominal temperature",		
 	""
 };
 
@@ -94,9 +105,9 @@ Core::Core() {
 	node[nodeSoftwareVersion] = (nodeStruct) {0x0000,VERSION_NUMBER,0x0103,9999,1,valueEngineRPMMin,valueEngineRPMMax,NODE_PROPERTY_LOCKED,VALUE_INT};  
 	node[nodeEngineRPM] =       (nodeStruct) {0x1001,0,0,0,1,valueEngineRPMFiltered,valueEngineRPMJitter, NODE_PROPERTY_LOCKED,VALUE_INT};
 	node[nodeEngineTiming] =    (nodeStruct) {0x1002,0,0,0,1,valueEngineTimingActual,valueNone, NODE_PROPERTY_LOCKED,VALUE_INJECTION_TIMING};  
-	node[nodeTempEngine] =      (nodeStruct) {0x1003,87+64,255,0,1,valueTempEngine,valueNone, NODE_PROPERTY_EDITABLE,VALUE_CELSIUS};  
-	node[nodeTempFuel] =        (nodeStruct) {0x1004,45+64,0,255,1,valueTempFuel,valueNone, NODE_PROPERTY_EDITABLE,VALUE_CELSIUS};  
-	node[nodeTempAir] =         (nodeStruct) {0x1005,45+64, 0,255,1,valueTempAir,valueNone, NODE_PROPERTY_EDITABLE,VALUE_CELSIUS};  
+	node[nodeTempEngine] =      (nodeStruct) {0x1003,87+64,255,0,1,valueTempEngineRaw,valueTempEngine, NODE_PROPERTY_EDITABLE,VALUE_CELSIUS};  
+	node[nodeTempFuel] =        (nodeStruct) {0x1004,45+64,0,255,1,valueTempFuelRaw,valueTempFuel, NODE_PROPERTY_EDITABLE,VALUE_CELSIUS};  
+	node[nodeTempIntake] =         (nodeStruct) {0x1005,45+64, 0,255,1,valueTempIntakeRaw,valueTempIntake, NODE_PROPERTY_EDITABLE,VALUE_CELSIUS};  
 	node[nodePressure] =        (nodeStruct) {0x1006,0,0,0,1,valueBoostPressure,valueNone, NODE_PROPERTY_LOCKED,VALUE_KPA};  
 	node[nodeHeartBeat] =       (nodeStruct) {0x1007,0,1,3,1,valueEngineRPMRaw,valueNone, NODE_PROPERTY_EDITABLE,VALUE_INT};      
 	node[nodeInjectionThresholdVoltage] = 
@@ -180,8 +191,24 @@ Core::Core() {
 	node[nodeActuatorDirection] = (nodeStruct) {0x5008,0,0,200,1,valueNone,valueActuatorSetPoint,NODE_PROPERTY_LOCKED,VALUE_INT};  
 	node[nodeActuatorSteppingDelay] = (nodeStruct) {0x5009,0,0,200,1,valueNone,valueNone,NODE_PROPERTY_EDITABLE,VALUE_MS}; 
 
+	node[nodeEngineTemp] =      (nodeStruct) {0x6000,0,255,0,1,valueTempEngine,valueNone, NODE_PROPERTY_LOCKED,VALUE_CELSIUS}; 
+	node[nodeEngineTempSensorBcoefficient] = (nodeStruct) {0x6001,3520,100,20000,10,valueNone,valueTempEngineRaw,NODE_PROPERTY_EDITABLE,VALUE_INT};  	
+	node[nodeEngineTempSensorNResistance] = (nodeStruct) {0x6002,450,100,20000,10,valueNone,valueNone,NODE_PROPERTY_EDITABLE,VALUE_INT};  	
+	node[nodeEngineTempSensorNTemp] = (nodeStruct) {0x6003,70,0,255,1,valueNone,valueNone,NODE_PROPERTY_EDITABLE,VALUE_INT};  	
+
+	node[nodeIntakeTemp] =      (nodeStruct) {0x6004,0,255,0,1,valueTempIntake,valueNone, NODE_PROPERTY_LOCKED,VALUE_CELSIUS}; 
+	node[nodeIntakeTempSensorBcoefficient] = (nodeStruct) {0x6005,3800,100,20000,10,valueNone,valueTempIntakeRaw,NODE_PROPERTY_EDITABLE,VALUE_INT};  	
+	node[nodeIntakeTempSensorNResistance] = (nodeStruct) {0x6006,450,100,20000,10,valueNone,valueNone,NODE_PROPERTY_EDITABLE,VALUE_INT};  	
+	node[nodeIntakeTempSensorNTemp] = (nodeStruct) {0x6007,70,0,255,1,valueNone,valueNone,NODE_PROPERTY_EDITABLE,VALUE_INT};  	
+
+	node[nodeFuelTemp] =      (nodeStruct) {0x6008,0,255,0,1,valueTempFuel,valueNone, NODE_PROPERTY_LOCKED,VALUE_CELSIUS}; 
+	node[nodeFuelTempSensorBcoefficient] = (nodeStruct) {0x6009,3450,100,20000,10,valueNone,valueTempFuelRaw,NODE_PROPERTY_EDITABLE,VALUE_INT};  	
+	node[nodeFuelTempSensorNResistance] = (nodeStruct) {0x600a,4000,100,20000,10,valueNone,valueNone,NODE_PROPERTY_EDITABLE,VALUE_INT};  	
+	node[nodeFuelTempSensorNTemp] = (nodeStruct) {0x600b,1,0,255,1,valueNone,valueNone,NODE_PROPERTY_EDITABLE,VALUE_INT};  	
+
 	currentNode = LIST_RESET;
 
+	// (file_id in EEPROM, initial_value, min, max, increment_step, bindedRawValue, bindedActualValue,isLocked?,description of this value (max 45 chars!))
 
 	/* MAP header <map-id>, 0xf0, .... 
 	Map id is used for saving/loading maps from eeprom, use unique id
@@ -311,40 +338,21 @@ Core::Core() {
 	/* 0xc? - temperature related maps */
 
 	static unsigned char glowPeriodMap[] = {
-		0xc0,0xF0,'M','1','D',
-		0x6,0x1,MAP_AXIS_CELSIUS,MAP_AXIS_NONE,MAP_AXIS_SECONDS,
-		30,30,20,10,0,0,
+		0xc4,0xF0,'M','1','D',
+		0x8,0x1,MAP_AXIS_CELSIUS,MAP_AXIS_NONE,MAP_AXIS_HALF_SECONDS,
+		40,22,8,6,3,0,0,0,
 		0,0,0,0,0                // lastX,lastY,lastRet,lastRet 10bit (2 bytes)
 	};
+
+	static unsigned char tempSenderMap[] = {
+		0xc5,0xF0,'M','1','D',
+		0x8,0x1,MAP_AXIS_CELSIUS,MAP_AXIS_NONE,MAP_AXIS_RAW,
+		0,0,18,66,130,170,255,255,
+		0,0,0,0,0                // lastX,lastY,lastRet,lastRet 10bit (2 bytes)
+	};
+	
 
 	/* 0xb? - temperature sensor calibration maps */
-
-	static unsigned char engineTempSensorMap[] = {
-		0xb0,0xF0,'M','1','D',
-		0x6,0x1,MAP_AXIS_VOLTAGE,MAP_AXIS_NONE,MAP_AXIS_CELSIUS,
-		30,20,9,0,0,0,
-		0,0,0,0,0                // lastX,lastY,lastRet,lastRet 10bit (2 bytes)
-	};
-
-	static unsigned char fuelTempSensorMap[] = {
-		0xb1,0xF0,'M','1','D',
-		0x6,0x1,MAP_AXIS_VOLTAGE,MAP_AXIS_NONE,MAP_AXIS_CELSIUS,
-		30,30,20,10,0,0,
-		0,0,0,0,0                // lastX,lastY,lastRet,lastRet 10bit (2 bytes)
-	};
-
-	static unsigned char airTempSensorMap[] = {
-		0xb2,0xF0,'M','1','D',
-		0x6,0x1,MAP_AXIS_VOLTAGE,MAP_AXIS_NONE,MAP_AXIS_CELSIUS,
-		30,30,20,10,0,0,
-		0,0,0,0,0                // lastX,lastY,lastRet,lastRet 10bit (2 bytes)
-	};
-	static unsigned char ecuTempSensorMap[] = {
-		0xb3,0xF0,'M','1','D',
-		0x6,0x1,MAP_AXIS_VOLTAGE,MAP_AXIS_NONE,MAP_AXIS_CELSIUS,
-		30,30,20,10,0,0,
-		0,0,0,0,0                // lastX,lastY,lastRet,lastRet 10bit (2 bytes)
-	};
 
 	/* 0x7? Generic control maps */
 
@@ -362,11 +370,9 @@ Core::Core() {
 	mapNames[Core::mapIdxClosedLoopAdvanceMap] = "Closed Loop advance";
 	mapNames[Core::mapIdxTurboControlMap] = "Turbo actuator; duty cycle base map";
 	mapNames[Core::mapIdxTurboTargetPressureMap] = "Turbo actuator; target pressure";
-	mapNames[Core::mapIdxGlowPeriodMap] = "Glow period (seconds)";
-	mapNames[Core::mapIdxEngineTempSensorMap] = "Engine temp. sensor calibration";
-	mapNames[Core::mapIdxFuelTempSensorMap] = "Fuel temp. sensor calibration";
-	mapNames[Core::mapIdxAirTempSensorMap] = "Intake air temp. sensor calibration";
-	mapNames[Core::mapIdxEcuTempSensorMap] = "Ecu temp. sensor calibration";
+	mapNames[Core::mapIdxGlowPeriodMap] = "Glow period (half seconds)";
+	mapNames[Core::mapIdxtempSenderMap] = "Temp Sender emu. output";
+
 
 	mapNames[Core::mapIdxFuelTrimFuelTemp] = "Fuel Trim amount vs. Fuel Temp.";
 	mapNames[Core::mapIdxFuelTrimAirTemp] = "Fuel Trim amount vs. Air Temp.";
@@ -382,10 +388,8 @@ Core::Core() {
 	maps[Core::mapIdxTurboControlMap] = (unsigned char*)&turboControlMap;
 	maps[Core::mapIdxTurboTargetPressureMap] = (unsigned char*)&turboTargetPressureMap;
 	maps[Core::mapIdxGlowPeriodMap] = (unsigned char*)&glowPeriodMap;
-	maps[Core::mapIdxEngineTempSensorMap] = (unsigned char*)&engineTempSensorMap;
-	maps[Core::mapIdxFuelTempSensorMap] = (unsigned char*)&fuelTempSensorMap;
-	maps[Core::mapIdxAirTempSensorMap] = (unsigned char*)&airTempSensorMap;
-	maps[Core::mapIdxEcuTempSensorMap] = (unsigned char*)&ecuTempSensorMap;
+	maps[Core::mapIdxtempSenderMap] = (unsigned char*)&tempSenderMap;
+
 
 //	maps[Core::mapIdxFuelTrimMap] = (unsigned char*)&fuelTrimMap;
 	maps[Core::mapIdxFuelTrimFuelTemp] = (unsigned char*)&fuelTrimFuelTemp;
@@ -394,7 +398,7 @@ Core::Core() {
 	maps[Core::mapIdxIdlePidP] = (unsigned char*)&idlePidP;
 
 
-	numberOfMaps=16;
+	numberOfMaps=13;
 }
 
 /*

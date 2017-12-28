@@ -2,7 +2,7 @@
 #define DEFINES_H
 
 #define VERSION_NUMBER 0x0103
-#define PRODUCT_NAME "dmn-edc 201705"
+#define PRODUCT_NAME "dmn-edc 201712"
 
 #define NUMBER_OF_CYLINDERS 5
 #define NEEDLELIFTSENSOR_CYLINDER 3
@@ -13,7 +13,8 @@
 
 #define ANALOG_INPUT_HIGH_STATE_LIMIT 975 /* if analog input is above this limit, assume no sensor is connected and internal pullup resistor feeds the almost +5v */
 
-#define BOOST_PID_RANGE 20
+#define TEMP_SENSOR_SERIES_RESITOR 3300
+// #define BOOST_PID_RANGE 20
 
 #define N108_MAX_DUTY_CYCLE 242
 #define N108_MIN_DUTY_CYCLE 0
@@ -40,7 +41,7 @@
 
 /* Analog Inputs */
 #define PIN_ANALOG_QA_POS A1
-#define PIN_ANALOG_TEMP_FUEL A4
+#define PIN_ANALOG_TEMP_FUEL A13 // harmaa
 #define PIN_ANALOG_BATTERY_VOLTAGE A7
 #define PIN_ANALOG_UNDEF_a A3 
 #define PIN_ANALOG_UNDEF_b A4 
@@ -48,9 +49,9 @@
 #define PIN_ANALOG_LAMBDA A6 
 #define PIN_ANALOG_EGT A6 
 #define PIN_ANALOG_MAP A5
-#define PIN_ANALOG_TEMP_INTAKE A2
-#define PIN_ANALOG_TEMP_GEARBOX A6
-#define PIN_ANALOG_TEMP_COOLANT A6
+#define PIN_ANALOG_TEMP_INTAKE A14 // keltainen
+#define PIN_ANALOG_TEMP_GEARBOX A7
+#define PIN_ANALOG_TEMP_COOLANT A15 // valkoinen
 
 /* TPS Sensor */
 #define PIN_ANALOG_TPS_POS A0
@@ -67,6 +68,7 @@
 #define PIN_PWM_BOOST_SOLENOID 8
 #define PIN_PWM_SERVO 9
 #define PIN_PWM_NLS_REF_VOLTAGE 10
+#define PIN_PWM_TEMP_SENDER 4
 
 /* servo control */
 #define PIN_SERVO_DIR 37
@@ -75,15 +77,15 @@
 /* relays */
 #define PIN_RELAY_POWER 22
 #define PIN_RELAY_FUEL_SOLENOID 23
-#define PIN_RELAY_FAN1 24
+#define PIN_RELAY_FAN1 A10 // vihreä -> vihreä/musta
 #define PIN_RELAY_FAN2 25
-#define PIN_RELAY_ENGINE_GLOW 26
+#define PIN_RELAY_ENGINE_GLOW A11 // sininen -> kelt/punainen
 #define PIN_RELAY_COOLANT_RELAY1 27
 #define PIN_RELAY_COOLANT_RELAY2 28
 #define PIN_RELAY_AUX 29
 
 /* general outputs */
-#define PIN_TACHO_OUT 11
+#define PIN_TACHO_OUT 45
 #define PIN_GLOW_LIGHT 13
 
 /* general inputs */
@@ -115,6 +117,7 @@
 #define MAP_AXIS_SECONDS 0x10
 #define MAP_AXIS_FUEL_TRIM_AMOUNT 0x11
 #define MAP_AXIS_PWM8 0x12
+#define MAP_AXIS_HALF_SECONDS 0x13
 
 
 #define BOOST_MAX_CLIP 1

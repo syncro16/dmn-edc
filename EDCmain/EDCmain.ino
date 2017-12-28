@@ -18,37 +18,6 @@ Program layout:
   + Utils (map lookup & interpolation routines, some ui routines as well)
   + defines.h PIN mapping and other low level data
 
-
-TODO:
-- timer2: based freq converter (pwm or one shot) for tacho etc..
-- overboost DTC + safe mode
-- Boost map scaler -> separate map -> better drivability
-- Overrun -> set Idle PID control to max to allow smooth curve for engine rpm decrease (or 1D(time) map ->  fuel addition)
-- PID Control routine: check that output saturation values doesnt let the original control values to run away (during deceleration etc)
-
-idle PID 33/2/1   (2-stable when engine load differs, 33 for rpm hunting to settle)
-qa   PID 54/7/1
-
-
-qa debugVal 
-	0 - as it is
-	1 - median filtering
-	2 - read pos when trigger happens
-
-
-2015-05:
-
-!!!! IDLE RPM menee ympäri kierroksilla ja PID laskenta koko ajan !!!
-
-TODO: Anti shudder control:
-
-Make injFuel "smoothing"
-if injFuel > sweetSpot then injFuel = injFuel * map[injFuel];
-
-or 
-
-maxRpm-minRpm = shudderAmount -> injFuel = injFuel * map[shudderAmount]
-
 Pump head wires
 1-pot signal
 2-pot +
@@ -58,12 +27,11 @@ Pump head wires
 5-ftemp -
 6-ftemp + (2300ohm 23C)
 
-todo:
-- sync qa pos reading with rpm sensor on runmode 100 ??
-- or smooth qa signal with RC circuit?
-- advance off before idling
-- check if interrupt service scheluder is blocking rpm interrupt ? -> random errors
-- initial injection quantity before starting
+Todo:
+- sync qa pos reading with rpm sensor on runmode 100 ?? -- problems with analogRead on -> todo
+- or smooth qa signal with RC circuit? -- maybe better
+- serial line errors?
+- log injection differences on rpm
 
 */
 #include "RPMDefaultCps.h"
@@ -77,12 +45,15 @@ todo:
 #include "defines.h"
 #include "MemoryFree.h"
 #include "PID.h"
+#include "TachoOut.h"
 
 // Crankshaft position sensor decoding, use RPMDefaultCps or RPMHiDensityCps 
 static RPMDefaultCps rpm;
 
 // VP37 Quantity adjuster module
 static QuantityAdjuster adjuster;
+
+//TachoOut tacho;
 
 // Periodic routines called by 2500Hz (or less, set divider to 2 or greater)
 #define interruptHandlerMax 8
@@ -97,7 +68,8 @@ volatile unsigned char shortTicks=0;
 // Called when Timer3 overflow occurs. Then calls handler routines according to their divider value
 void mainInterruptHandler() {
 	// Enable nested interrupts to not miss (or wrongly) calculate RPM signal 
-	sei();    
+	//sei();
+
 	for (unsigned char i=0;i<interruptHandlerMax;i++) {
 		if (interruptHandlerArray[i].handler != NULL 
 			&& (interruptHandlerArray[i].divider == 0
@@ -106,7 +78,6 @@ void mainInterruptHandler() {
 		}
 	}
 	shortTicks++;
-	//cli(); // brainfart
 } 
 
 void refreshQuantityAdjuster() {
@@ -166,39 +137,36 @@ void refreshSlowSensors() {
 
  	// Engine TEMP
 	value = analogRead(PIN_ANALOG_TEMP_COOLANT);
-	scaledValue = mapLookUp(core.maps[Core::mapIdxEngineTempSensorMap], value / 4, 0);		
 	if (value > ANALOG_INPUT_HIGH_STATE_LIMIT) {
 		// generate error only if map is configured and sensor reading is not present
-		if (scaledValue > 0)
 		dtc.setError(DTC_ENGINE_TEMP_UNCONNECTED);
-		scaledValue = core.node[Core::nodeTempEngine].value; // use configuration setpoint value sensor's failback substitute value
-	} 
-	core.controls[Core::valueTempEngine]=scaledValue;
+		core.controls[Core::valueTempEngineRaw] = 512; // use configuration setpoint value sensor's failback substitute value
+	} else {
+		core.controls[Core::valueTempEngineRaw] = value;
+	}
 	
 	// Fuel TEMP
 	value = analogRead(PIN_ANALOG_TEMP_FUEL);
-	scaledValue = mapLookUp(core.maps[Core::mapIdxFuelTempSensorMap], value / 4, 0);		
 	if (value > ANALOG_INPUT_HIGH_STATE_LIMIT) {
 		// generate error only if map is configured and sensor reading is not present
-		if (scaledValue > 0)
 		dtc.setError(DTC_FUEL_TEMP_UNCONNECTED);
-		scaledValue = core.node[Core::nodeTempFuel].value; // use configuration setpoint value sensor's failback substitute value
+		core.controls[Core::valueTempFuelRaw] = 512; // use configuration setpoint value sensor's failback substitute value
+	} else {
+		core.controls[Core::valueTempFuelRaw] = value;
 	}
-	core.controls[Core::valueTempFuel]=scaledValue;
 
 	// Air TEMP
 	value = analogRead(PIN_ANALOG_TEMP_INTAKE);
-	scaledValue = mapLookUp(core.maps[Core::mapIdxAirTempSensorMap], value / 4, 0);		
 	if (value > ANALOG_INPUT_HIGH_STATE_LIMIT) {
 		// generate error only if map is configured and sensor reading is not present
-		if (scaledValue > 0)
 		dtc.setError(DTC_AIR_TEMP_UNCONNECTED);
-		scaledValue = core.node[Core::nodeTempAir].value; // use configuration setpoint value sensor's failback substitute value
+		core.controls[Core::valueTempIntakeRaw] = 512; // use configuration setpoint value sensor's failback substitute value
+	} else {
+		core.controls[Core::valueTempIntakeRaw] = value;
 	}
-	core.controls[Core::valueTempAir]=scaledValue;
 
 	// Gearbox TEMP
-	value = analogRead(PIN_ANALOG_TEMP_GEARBOX);
+//	value = analogRead(PIN_ANALOG_TEMP_GEARBOX);
 /*	scaledValue = mapLookUp(core.maps[Core::mapIdxAirTempSensorMap], value / 4, 0);		
 	if (value > ANALOG_INPUT_HIGH_STATE_LIMIT) {
 		// generate error only if map is configured and sensor reading is not present
@@ -251,7 +219,7 @@ void refreshSlowSensors() {
 	 	mapFailCount = 0;
 	}
 
- 	core.controls[Core::valueBatteryVoltage] = analogRead(PIN_ANALOG_BATTERY_VOLTAGE);  
+ 	core.controls[Core::valueBatteryVoltage] = (core.controls[Core::valueBatteryVoltage]*3+analogRead(PIN_ANALOG_BATTERY_VOLTAGE))/4;  
 
 	// Log adjuster accuracy for debugging
 	core.controls[Core::valueQAJitter] = adjuster.accuracy; 
@@ -534,7 +502,7 @@ void refreshFastSensors() {
 	if (core.controls[Core::valueEngineRPMFiltered] == 0 && core.node[Core::nodeFuelCutAtStall].value == 1) {
 		core.controls[Core::valueRunMode]=ENGINE_STATE_STOPPED; // Stopped  		
 		// fuelAmount = 0;
-		fuelAmount = core.node[Core::nodeInitial5Quantity].value;
+		fuelAmount = core.node[Core::nodeInitialInjectionQuantity].value;
 	} else {
 		int rpmCorrected = mapValues(core.controls[Core::valueEngineRPMFiltered],0,core.node[Core::nodeControlMapScaleRPM].value);   
 		core.controls[Core::valueRPM8bit] = rpmCorrected;
@@ -568,7 +536,9 @@ void refreshFastSensors() {
 					core.controls[Core::valueRunMode] = ENGINE_STATE_PID_IDLE; // pid idle 
 		//			idlePidControl.setPosition(core.node[Core::nodeIdleSpeedTarget].value);
 		//			idlePidControl.calculate();
-					fuelAmount += core.controls[Core::valueIdlePIDCorrection];
+
+					// added after smoothing
+					//fuelAmount += core.controls[Core::valueIdlePIDCorrection];
 					idleLastCalculatedFuelAmount = fuelAmount;
 				} else {
 					// Use idle & cold start map.
@@ -648,19 +618,52 @@ void refreshFastSensors() {
 		v2 = (float)(100-core.node[Core::nodeFuelMapSmoothness].value)/100.0;
 		r = (a1*v1+a2*v2);
 
+		if (core.controls[Core::valueRunMode] != ENGINE_STATE_STOPPED)
+			r += core.controls[Core::valueIdlePIDCorrection];
+	
 		core.controls[Core::valueFuelAmount] = r;	
 		core.controls[Core::valueFuelAmount8bit] = r/4;
 	} else {
+		if (core.controls[Core::valueRunMode] != ENGINE_STATE_STOPPED)
+			fuelAmount += core.controls[Core::valueIdlePIDCorrection];
+		
 		core.controls[Core::valueFuelAmount] = fuelAmount;	
 		core.controls[Core::valueFuelAmount8bit] = fuelAmount/4;
 	}
+
 
 	adjuster.setPosition(core.controls[Core::valueFuelAmount]);
 
 }
 
+static unsigned char halfSeconds = 0;
+
 void doRelayControl() {
 
+	if (core.controls[Core::valueEngineRPM] == 0) {
+		unsigned char len = mapLookUp(core.maps[Core::mapIdxGlowPeriodMap],core.controls[Core::valueTempEngine],0);
+		if (halfSeconds<=len) {
+			int step = 500+((int)len-(int)halfSeconds)*500;
+			tacho.setRpm(step);		
+							
+			digitalWrite(PIN_RELAY_ENGINE_GLOW,HIGH);
+		} else {
+			digitalWrite(PIN_RELAY_ENGINE_GLOW,LOW);
+			tacho.setRpm(0);			
+		}
+	} else {
+		tacho.setRpm(core.controls[Core::valueEngineRPM]);
+//		digitalWrite(PIN_RELAY_ENGINE_GLOW,LOW);		
+	}
+
+	if (core.controls[Core::valueOutputTestMode]) {
+		digitalWrite(PIN_RELAY_ENGINE_GLOW,core.controls[Core::valueOutputGlow]);
+		digitalWrite(PIN_RELAY_FAN1,core.controls[Core::valueOutputFan]);
+	} else {
+
+	}
+	unsigned char emulatedOutput = mapLookUp(core.maps[Core::mapIdxtempSenderMap],core.controls[Core::valueTempEngine],0);	
+	analogWrite(PIN_PWM_TEMP_SENDER,emulatedOutput);
 }
 
 
@@ -698,6 +701,7 @@ void setup() {
 	pinMode(PIN_PWM_BOOST_SOLENOID,OUTPUT);
 	pinMode(PIN_PWM_SERVO,OUTPUT);
 	pinMode(PIN_PWM_NLS_REF_VOLTAGE,OUTPUT);
+	pinMode(PIN_PWM_TEMP_SENDER,OUTPUT);
 
 	/* servo control */
 	pinMode(PIN_SERVO_DIR,OUTPUT);
@@ -723,8 +727,10 @@ void setup() {
 	//	analogReference(EXTERNAL); // connect +5 power supply to aref
 
 
+	pinMode(44,OUTPUT);
 
-	//tacho.init();
+
+	tacho.init();
 	/*
 	// Setting ADC prescaler to /16 (http://www.arduino.cc/cgi-bin/yabb2/YaBB.pl?num=1208715493/11 )
 	sbi(ADCSRA,ADPS2) ;
@@ -796,28 +802,54 @@ char loopCount = 0;
 
 
 void loop() {
-///	adjuster.update();
-
-
-	//boolean printValues = 0;
 	boolean ignoreSleep = false;
-//	static unsigned char testMapX = 0;
-//	static unsigned char testMapY = 0;
-
 //	refreshSlowSensors();
 	doBoostControl();
 	doTimingControl();
 	doRelayControl();
 	doIdlePidControl();
 
-
+	static int rpmMin,rpmMax;
+	if (loopCount % 30 == 0) {	
+		if (halfSeconds<255) 
+			halfSeconds++;
+	}
 	if (loopCount == 60) {
 		// Log some "short term" differencies
-//RPM		core.controls[Core::valueEngineRPMJitter]=rpmMax-rpmMin;
-//RPM		rpmMin = core.controls[Core::valueEngineRPM];
-//RPM		rpmMax = core.controls[Core::valueEngineRPM];
+		core.controls[Core::valueEngineRPMJitter]=rpmMax-rpmMin;
+		rpmMin = core.controls[Core::valueEngineRPM];
+		rpmMax = core.controls[Core::valueEngineRPM];
 		loopCount=0;    
-	}   
+
+		int ret = tempSensorBcoefficientCalc(
+			core.controls[Core::valueTempEngineRaw],
+			core.node[Core::nodeEngineTempSensorBcoefficient].value,
+			core.node[Core::nodeEngineTempSensorNResistance].value,
+			core.node[Core::nodeEngineTempSensorNTemp].value
+			);
+		core.controls[Core::valueTempEngine] = ret;
+
+		 ret = tempSensorBcoefficientCalc(
+			core.controls[Core::valueTempFuelRaw],
+			core.node[Core::nodeFuelTempSensorBcoefficient].value,
+			core.node[Core::nodeFuelTempSensorNResistance].value,
+			core.node[Core::nodeFuelTempSensorNTemp].value
+			);
+		core.controls[Core::valueTempFuel] = ret;
+
+		ret = tempSensorBcoefficientCalc(
+			core.controls[Core::valueTempIntakeRaw],
+			core.node[Core::nodeIntakeTempSensorBcoefficient].value,
+			core.node[Core::nodeIntakeTempSensorNResistance].value,
+			core.node[Core::nodeIntakeTempSensorNTemp].value
+			);
+		core.controls[Core::valueTempIntake] = ret;				
+	}  
+	if (core.controls[Core::valueEngineRPM]<rpmMin) 
+		rpmMin = core.controls[Core::valueEngineRPM];
+	if (core.controls[Core::valueEngineRPM]>rpmMax) 
+		rpmMax = core.controls[Core::valueEngineRPM];
+
 	loopCount++;
 	
 	lastKey = 0;

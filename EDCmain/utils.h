@@ -49,6 +49,6 @@ int toRpm(int raw);
 
 int toTps(int raw);
 
-//unsigned char simulatePressureActuator(int maxPressure,int currentPressure);
+int tempSensorBcoefficientCalc(int raw,int bCoEfficient, int nResistance,int nTemp);
 
 #endif

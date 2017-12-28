@@ -51,7 +51,7 @@ public:
     static const unsigned char valueTPSActual = 2;
     static const unsigned char valueTempEngine = 3;
     static const unsigned char valueTempFuel = 4;
-    static const unsigned char valueTempAir = 5;
+    static const unsigned char valueTempIntake = 5;
     static const unsigned char valueBoostPressure = 6;
     static const unsigned char valueEngineRPM = 7;
     static const unsigned char valueEngineTimingTarget = 8;
@@ -108,7 +108,10 @@ public:
     static const unsigned char valueBoostPIDComponentI = 59;
     static const unsigned char valueBoostPIDComponentD = 60;
     static const unsigned char valueBoostCalculatedAmount = 61;
-    static const unsigned char VALUE_MAX = 61;
+    static const unsigned char valueTempEngineRaw = 62;
+    static const unsigned char valueTempFuelRaw = 63;
+    static const unsigned char valueTempIntakeRaw = 64;
+    static const unsigned char VALUE_MAX = 64;
 
     // Storage for sensors values and such
     volatile int controls[Core::VALUE_MAX+1];    
@@ -119,7 +122,7 @@ public:
     static const unsigned char nodeEngineTiming = 2;
     static const unsigned char nodeTempEngine = 3;
     static const unsigned char nodeTempFuel = 4;
-    static const unsigned char nodeTempAir = 5;   
+    static const unsigned char nodeTempIntake = 5;   
     static const unsigned char nodePressure = 6;   
     static const unsigned char nodeHeartBeat = 7; 
     static const unsigned char nodeInjectionThresholdVoltage = 8;
@@ -197,7 +200,22 @@ public:
 
     static const unsigned char nodeActuatorSteppingDelay = 72; 
 
-    static const unsigned char NODE_MAX = 73; 
+    static const unsigned char nodeEngineTemp = 73;
+    static const unsigned char nodeEngineTempSensorBcoefficient = 74;
+    static const unsigned char nodeEngineTempSensorNResistance = 75;
+    static const unsigned char nodeEngineTempSensorNTemp = 76;
+
+    static const unsigned char nodeIntakeTemp = 77;
+    static const unsigned char nodeIntakeTempSensorBcoefficient = 78;
+    static const unsigned char nodeIntakeTempSensorNResistance = 79;
+    static const unsigned char nodeIntakeTempSensorNTemp = 80;
+
+    static const unsigned char nodeFuelTemp = 81;
+    static const unsigned char nodeFuelTempSensorBcoefficient = 82;
+    static const unsigned char nodeFuelTempSensorNResistance = 83;
+    static const unsigned char nodeFuelTempSensorNTemp = 84;
+
+    static const unsigned char NODE_MAX = 84;
     
     static const unsigned char LIST_RESET = -1;
     // Storage for configuragble items
@@ -213,14 +231,10 @@ public:
     static const unsigned char mapIdxTurboControlMap = 6;    
     static const unsigned char mapIdxTurboTargetPressureMap = 7;   
     static const unsigned char mapIdxGlowPeriodMap = 8;
-    static const unsigned char mapIdxFuelTrimFuelTemp = 9;
-    static const unsigned char mapIdxFuelTrimAirTemp = 10;   
-
-    static const unsigned char mapIdxEngineTempSensorMap = 11;    
-    static const unsigned char mapIdxFuelTempSensorMap = 12;    
-    static const unsigned char mapIdxAirTempSensorMap = 13;   
-    static const unsigned char mapIdxEcuTempSensorMap = 14;    
-    static const unsigned char mapIdxActuatorTension = 15;
+    static const unsigned char mapIdxtempSenderMap = 9;
+    static const unsigned char mapIdxFuelTrimFuelTemp = 10;
+    static const unsigned char mapIdxFuelTrimAirTemp = 11;   
+    static const unsigned char mapIdxActuatorTension = 12;
 
     
     // unsigned char basicFuelMap[13+6*6];

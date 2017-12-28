@@ -54,7 +54,7 @@ void printValue(int i,char type) {
             break;
 
         case VALUE_CELSIUS:                   
-            printIntWithPadding(i-64,5,' ');
+            printIntWithPadding(toTemperature(i),5,' ');
             Serial.print("C");                            
             break;
 
@@ -94,7 +94,7 @@ void printValue(int i,char type) {
             Serial.print("v");                
             break;
         case VALUE_BATTERY_VOLTAGE:
-            fixed = (float)(1.93*(float)i); // r1= 3000, r2 = 10000
+            fixed = (float)(2.45*(float)i); // r1= 3000, r2 = 10000
             ltoa(fixed,buf,10);
             if (strlen(buf) == 4) {
                 Serial.print(buf[0]);
@@ -369,7 +369,7 @@ void printMapAxis(unsigned char axisType,unsigned char value,bool verbose) {
             printValue(value*4,VALUE_VOLTAGE);
             break;
         case MAP_AXIS_CELSIUS:
-            Serial.print(value-64,DEC);
+            Serial.print(toTemperature(value),DEC);
             if (verbose) Serial.print(" °C");
             break;
         case MAP_AXIS_INJECTION_TIMING:
@@ -398,9 +398,9 @@ int toKpa(int raw) {
 }
 
 int toTemperature( int rawValue) {
-   // int ret = mapLookUp(tempMap,rawValue,0);
-    //return ret-64;
-    return -1;
+    // 0..255 --> -35 .. 157
+
+    return ((rawValue*3)/4)-35;
 }
 
 int toVoltage(int raw) {
@@ -419,6 +419,32 @@ int toTps(int raw) {
     return int(raw/2.55);
 }
 
+int tempSensorBcoefficientCalc(int raw,int bCoEfficient, int nResistance,int nTemp) {
+    float seriesResistor = 3000;;
+    float nominalResistance = nResistance;
+    float nominalTemp = nTemp;
+
+    //convert value to resistance
+    float resistance = (1023.0f / (float)raw) - 1.0f;
+    resistance = seriesResistor / resistance;
+
+    float steinhart = resistance / nominalResistance; // (R/Ro)
+    steinhart = log(steinhart); // ln(R/Ro)
+    steinhart = steinhart / (float)bCoEfficient; // 1/B * ln(R/Ro)
+    steinhart += 1.0f / (nominalTemp + 273.15); // + (1/To)
+    steinhart = 1.0f / steinhart; // Invert
+    steinhart -= 273.15f; // convert to C
+
+    // convert to internal 8bit format
+    if (steinhart < -35)
+        steinhart = -35;
+    if (steinhart > 156)
+        steinhart = 156;
+
+    int ret = ((steinhart+35)*4)/3;
+        
+    return ret;
+}
 /*
 unsigned char simulatePressureActuator(int maxPressure,int currentPressure) {
     
