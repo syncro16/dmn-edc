@@ -111,7 +111,15 @@ public:
     static const unsigned char valueTempEngineRaw = 62;
     static const unsigned char valueTempFuelRaw = 63;
     static const unsigned char valueTempIntakeRaw = 64;
-    static const unsigned char VALUE_MAX = 64;
+    static const unsigned char valueRpmDeviation1 = 65;
+    static const unsigned char valueRpmDeviation2 = 66;
+    static const unsigned char valueRpmDeviation3 = 67;
+    static const unsigned char valueRpmDeviation4 = 68;
+    static const unsigned char valueRpmDeviation5 = 69;
+    static const unsigned char valueRpmDeviation6 = 70;
+    static const unsigned char valueFan1State = 71;
+    static const unsigned char VALUE_MAX = 71;
+
 
     // Storage for sensors values and such
     volatile int controls[Core::VALUE_MAX+1];    
@@ -124,17 +132,15 @@ public:
     static const unsigned char nodeTempFuel = 4;
     static const unsigned char nodeTempIntake = 5;   
     static const unsigned char nodePressure = 6;   
-    static const unsigned char nodeHeartBeat = 7; 
-    static const unsigned char nodeInjectionThresholdVoltage = 8;
-    static const unsigned char nodeBatteryVoltage = 9;
-    static const unsigned char nodeRunMode = 10;
-
-    static const unsigned char nodeFuelTrim = 11;
-    static const unsigned char nodeFuelMapSmoothness = 12;
-    static const unsigned char nodeInitialInjectionQuantity = 13;
-    static const unsigned char nodeQASync = 14;
-    static const unsigned char nodeFree4 = 15;
-    static const unsigned char nodeFree5 = 16;
+    static const unsigned char nodeInjectionThresholdVoltage = 7;
+    static const unsigned char nodeBatteryVoltage = 8;
+    static const unsigned char nodeRunMode = 9;
+    static const unsigned char nodeRpmDeviation1 = 10;
+    static const unsigned char nodeRpmDeviation2 = 11;
+    static const unsigned char nodeRpmDeviation3 = 12;
+    static const unsigned char nodeRpmDeviation4 = 13;
+    static const unsigned char nodeRpmDeviation5 = 14;
+    static const unsigned char nodeRpmDeviation6 = 15;
  
     // 7 .. 16 is reserved values to be observed on main screen
     
@@ -215,7 +221,12 @@ public:
     static const unsigned char nodeFuelTempSensorNResistance = 83;
     static const unsigned char nodeFuelTempSensorNTemp = 84;
 
-    static const unsigned char NODE_MAX = 84;
+    // misc settings
+    static const unsigned char nodeFuelMapSmoothness = 85;
+    static const unsigned char nodeInitialInjectionQuantity = 86;
+    static const unsigned char nodeQASync = 87;
+    static const unsigned char nodeFan1SwitchOnTemp = 88;
+    static const unsigned char NODE_MAX = 88;
     
     static const unsigned char LIST_RESET = -1;
     // Storage for configuragble items

@@ -640,28 +640,43 @@ static unsigned char halfSeconds = 0;
 
 void doRelayControl() {
 
-	if (core.controls[Core::valueEngineRPM] == 0) {
-		unsigned char len = mapLookUp(core.maps[Core::mapIdxGlowPeriodMap],core.controls[Core::valueTempEngine],0);
-		if (halfSeconds<=len) {
-			int step = 500+((int)len-(int)halfSeconds)*500;
-			tacho.setRpm(step);		
-							
-			digitalWrite(PIN_RELAY_ENGINE_GLOW,HIGH);
+
+	if (core.controls[Core::valueOutputTestMode] == 0) {
+		// if not in output test mode, performn normal operation
+		if (core.controls[Core::valueEngineRPM] == 0) {
+			unsigned char len = mapLookUp(core.maps[Core::mapIdxGlowPeriodMap],core.controls[Core::valueTempEngine],0);
+			if (halfSeconds<=len) {
+				int step = 500+((int)len-(int)halfSeconds)*500;
+				tacho.setRpm(step);		
+				core.controls[Core::valueOutputGlow] = true;							
+			} else {
+				core.controls[Core::valueOutputGlow] = false;		
+				tacho.setRpm(0);			
+			}
 		} else {
-			digitalWrite(PIN_RELAY_ENGINE_GLOW,LOW);
-			tacho.setRpm(0);			
+			tacho.setRpm(core.controls[Core::valueEngineRPM]);
+	//		digitalWrite(PIN_RELAY_ENGINE_GLOW,LOW);		
+		}
+		
+		if (core.controls[Core::valueFan1State]) {
+			if (core.controls[Core::valueTempIntake] <= core.node[Core::nodeFan1SwitchOnTemp].value-10) {
+				core.controls[Core::valueFan1State] = 0;
+			} else {
+				core.controls[Core::valueFan1State] = 1;
+			}
+		} else {
+			if (core.controls[Core::valueTempIntake] >= core.node[Core::nodeFan1SwitchOnTemp].value) {
+				core.controls[Core::valueFan1State] = 1;
+			} else {
+				core.controls[Core::valueFan1State] = 0;
+			}
 		}
 	} else {
-		tacho.setRpm(core.controls[Core::valueEngineRPM]);
-//		digitalWrite(PIN_RELAY_ENGINE_GLOW,LOW);		
+		tacho.setRpm(2500);
 	}
+	digitalWrite(PIN_RELAY_ENGINE_GLOW,core.controls[Core::valueOutputGlow]);
+	digitalWrite(PIN_RELAY_FAN1,core.controls[Core::valueFan1State]);	
 
-	if (core.controls[Core::valueOutputTestMode]) {
-		digitalWrite(PIN_RELAY_ENGINE_GLOW,core.controls[Core::valueOutputGlow]);
-		digitalWrite(PIN_RELAY_FAN1,core.controls[Core::valueOutputFan]);
-	} else {
-
-	}
 	unsigned char emulatedOutput = mapLookUp(core.maps[Core::mapIdxtempSenderMap],core.controls[Core::valueTempEngine],0);	
 	analogWrite(PIN_PWM_TEMP_SENDER,emulatedOutput);
 }

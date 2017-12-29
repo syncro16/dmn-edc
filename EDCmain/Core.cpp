@@ -14,16 +14,16 @@ const char nodeDescription[][55] PROGMEM = {
 	"Fuel temperature", // 4
 	"Air temperature", // 5
 	"Boost pressure", // 6
-	"Heartbeat", // 7
-	"Injection trigger threshold voltage", // 8
-	"Battery Voltage", // 9
-	"Running State", // 10 
-	"Fuel trim enable", // 11
-	"Fuelmap smoothness", // 12
-	"Initial Injection Quantity", // 13
-	"QA reading sync'd with RPM", // 14
-	"", // 15
-	"", // 16
+	"Injection trigger threshold voltage", // 7
+	"Battery Voltage", // 8
+	"Running State", // 9
+	"Rpm deviation cyl#1", // 10
+	"Rpm deviation cyl#2", // 11
+	"Rpm deviation cyl#3", // 12
+	"Rpm deviation cyl#4", // 13
+	"Rpm deviation cyl#5", // 14
+	"Rpm deviation cyl#6", // 15
+	"", // 16 
 	"TPS: signal min limit", // 17
 	"TPS: signal max limit", // 18
 	"TPS: safety bits (0=off, 1=idleSw/WotSW)", // 19
@@ -91,7 +91,11 @@ const char nodeDescription[][55] PROGMEM = {
 	"Temp Sensor, fuel: value",
 	"Temp Sensor, fuel: B-coefficient",
 	"Temp Sensor, fuel: nominal resistance",
-	"Temp Sensor, fuel: nominal temperature",		
+	"Temp Sensor, fuel: nominal temperature",	
+	"Fuelmap smoothness", // 85
+	"Initial Injection Quantity", // 86
+	"QA reading sync'd with RPM", // 87	
+	"Fan#1 Switch on temperature" // 88
 	""
 };
 
@@ -105,21 +109,20 @@ Core::Core() {
 	node[nodeSoftwareVersion] = (nodeStruct) {0x0000,VERSION_NUMBER,0x0103,9999,1,valueEngineRPMMin,valueEngineRPMMax,NODE_PROPERTY_LOCKED,VALUE_INT};  
 	node[nodeEngineRPM] =       (nodeStruct) {0x1001,0,0,0,1,valueEngineRPMFiltered,valueEngineRPMJitter, NODE_PROPERTY_LOCKED,VALUE_INT};
 	node[nodeEngineTiming] =    (nodeStruct) {0x1002,0,0,0,1,valueEngineTimingActual,valueNone, NODE_PROPERTY_LOCKED,VALUE_INJECTION_TIMING};  
-	node[nodeTempEngine] =      (nodeStruct) {0x1003,87+64,255,0,1,valueTempEngineRaw,valueTempEngine, NODE_PROPERTY_EDITABLE,VALUE_CELSIUS};  
-	node[nodeTempFuel] =        (nodeStruct) {0x1004,45+64,0,255,1,valueTempFuelRaw,valueTempFuel, NODE_PROPERTY_EDITABLE,VALUE_CELSIUS};  
-	node[nodeTempIntake] =         (nodeStruct) {0x1005,45+64, 0,255,1,valueTempIntakeRaw,valueTempIntake, NODE_PROPERTY_EDITABLE,VALUE_CELSIUS};  
+	node[nodeTempEngine] =      (nodeStruct) {0x10e3,47,255,0,1,valueTempEngine,valueTempEngineRaw, NODE_PROPERTY_LOCKED,VALUE_CELSIUS};  
+	node[nodeTempFuel] =        (nodeStruct) {0x10e4,47,0,255,1,valueTempFuel,valueTempFuelRaw, NODE_PROPERTY_LOCKED,VALUE_CELSIUS};  
+	node[nodeTempIntake] =         (nodeStruct) {0x10e5,47, 0,255,1,valueTempIntake,valueTempIntakeRaw, NODE_PROPERTY_LOCKED,VALUE_CELSIUS};  
 	node[nodePressure] =        (nodeStruct) {0x1006,0,0,0,1,valueBoostPressure,valueNone, NODE_PROPERTY_LOCKED,VALUE_KPA};  
-	node[nodeHeartBeat] =       (nodeStruct) {0x1007,0,1,3,1,valueEngineRPMRaw,valueNone, NODE_PROPERTY_EDITABLE,VALUE_INT};      
 	node[nodeInjectionThresholdVoltage] = 
-	                            (nodeStruct) {0x1008,0,0,1,1,valueInjectionThresholdVoltage,valueNone, NODE_PROPERTY_LOCKED,VALUE_VOLTAGE};     
-	node[nodeBatteryVoltage] =  (nodeStruct) {0x1009,0,0,1,1,valueBatteryVoltage,valueNone, NODE_PROPERTY_LOCKED,VALUE_BATTERY_VOLTAGE};     
-	node[nodeRunMode] =         (nodeStruct) {0x100A,0,0,1,1,valueRunMode,valueNone, NODE_PROPERTY_LOCKED,VALUE_INT};     
-	node[nodeFuelTrim] =        (nodeStruct) {0x100B,0,0,1,1,valueNone,valueFuelTrim, NODE_PROPERTY_EDITABLE,VALUE_BOOLEAN};
-	node[nodeFuelMapSmoothness] =  (nodeStruct) {0x100C,0,0,100,5,valueNone,valueNone, NODE_PROPERTY_EDITABLE,VALUE_INT};     
-	node[nodeInitialInjectionQuantity] =       (nodeStruct) {0x100D,120,0,1000,5,valueNone,valueNone, NODE_PROPERTY_EDITABLE,VALUE_INT};     
-	node[nodeQASync] =           (nodeStruct) {0x100E,0,0,1,1,valueNone,valueNone, NODE_PROPERTY_EDITABLE,VALUE_BOOLEAN};     
-	node[nodeFree4] =           (nodeStruct) {0x100F,0,0,1,1,valueNone,valueNone, NODE_PROPERTY_HIDDEN,VALUE_INT};     
-//	node[nodeFree5] =           (nodeStruct) {0x100F,0,0,1,1,valueNone,valueNone, NODE_PROPERTY_HIDDEN,VALUE_INT};     
+	                            (nodeStruct) {0x1007,0,0,1,1,valueInjectionThresholdVoltage,valueNone, NODE_PROPERTY_LOCKED,VALUE_VOLTAGE};     
+	node[nodeBatteryVoltage] =  (nodeStruct) {0x1008,0,0,1,1,valueBatteryVoltage,valueNone, NODE_PROPERTY_LOCKED,VALUE_BATTERY_VOLTAGE};     
+	node[nodeRunMode] =         (nodeStruct) {0x1009,0,0,1,1,valueRunMode,valueNone, NODE_PROPERTY_LOCKED,VALUE_INT};     
+	node[nodeRpmDeviation1] =   (nodeStruct) {0x10FA,0,0,1,1,valueNone,valueRpmDeviation1, NODE_PROPERTY_LOCKED,VALUE_INT};
+	node[nodeRpmDeviation2] =   (nodeStruct) {0x10FB,0,0,1,1,valueNone,valueRpmDeviation2, NODE_PROPERTY_LOCKED,VALUE_INT};
+	node[nodeRpmDeviation3] =   (nodeStruct) {0x10FC,0,0,1,1,valueNone,valueRpmDeviation3, NODE_PROPERTY_LOCKED,VALUE_INT};
+	node[nodeRpmDeviation4] =   (nodeStruct) {0x10FD,0,0,1,1,valueNone,valueRpmDeviation4, NODE_PROPERTY_LOCKED,VALUE_INT};
+	node[nodeRpmDeviation5] =   (nodeStruct) {0x10FE,0,0,1,1,valueNone,valueRpmDeviation5, NODE_PROPERTY_LOCKED,VALUE_INT};
+	node[nodeRpmDeviation6] =   (nodeStruct) {0x10FF,0,0,1,1,valueNone,valueRpmDeviation6, NODE_PROPERTY_LOCKED,VALUE_INT};
 
 	node[nodeTPSMin] = 	        (nodeStruct) {0x1010,201,25,1000,1,valueTPSRaw,valueTPSActual,NODE_PROPERTY_EDITABLE,VALUE_VOLTAGE};  
 	node[nodeTPSMax] =          (nodeStruct) {0x1011,885,25,1000,1,valueTPSRaw,valueTPSActual,NODE_PROPERTY_EDITABLE,VALUE_VOLTAGE};
@@ -191,20 +194,25 @@ Core::Core() {
 	node[nodeActuatorDirection] = (nodeStruct) {0x5008,0,0,200,1,valueNone,valueActuatorSetPoint,NODE_PROPERTY_LOCKED,VALUE_INT};  
 	node[nodeActuatorSteppingDelay] = (nodeStruct) {0x5009,0,0,200,1,valueNone,valueNone,NODE_PROPERTY_EDITABLE,VALUE_MS}; 
 
-	node[nodeEngineTemp] =      (nodeStruct) {0x6000,0,255,0,1,valueTempEngine,valueNone, NODE_PROPERTY_LOCKED,VALUE_CELSIUS}; 
+	node[nodeEngineTemp] =      (nodeStruct) {0x6000,47,255,0,1,valueTempEngine,valueNone, NODE_PROPERTY_LOCKED,VALUE_CELSIUS}; 
 	node[nodeEngineTempSensorBcoefficient] = (nodeStruct) {0x6001,3520,100,20000,10,valueNone,valueTempEngineRaw,NODE_PROPERTY_EDITABLE,VALUE_INT};  	
 	node[nodeEngineTempSensorNResistance] = (nodeStruct) {0x6002,450,100,20000,10,valueNone,valueNone,NODE_PROPERTY_EDITABLE,VALUE_INT};  	
 	node[nodeEngineTempSensorNTemp] = (nodeStruct) {0x6003,70,0,255,1,valueNone,valueNone,NODE_PROPERTY_EDITABLE,VALUE_INT};  	
 
-	node[nodeIntakeTemp] =      (nodeStruct) {0x6004,0,255,0,1,valueTempIntake,valueNone, NODE_PROPERTY_LOCKED,VALUE_CELSIUS}; 
+	node[nodeIntakeTemp] =      (nodeStruct) {0x6004,47,255,0,1,valueTempIntake,valueNone, NODE_PROPERTY_LOCKED,VALUE_CELSIUS}; 
 	node[nodeIntakeTempSensorBcoefficient] = (nodeStruct) {0x6005,3800,100,20000,10,valueNone,valueTempIntakeRaw,NODE_PROPERTY_EDITABLE,VALUE_INT};  	
 	node[nodeIntakeTempSensorNResistance] = (nodeStruct) {0x6006,450,100,20000,10,valueNone,valueNone,NODE_PROPERTY_EDITABLE,VALUE_INT};  	
 	node[nodeIntakeTempSensorNTemp] = (nodeStruct) {0x6007,70,0,255,1,valueNone,valueNone,NODE_PROPERTY_EDITABLE,VALUE_INT};  	
 
-	node[nodeFuelTemp] =      (nodeStruct) {0x6008,0,255,0,1,valueTempFuel,valueNone, NODE_PROPERTY_LOCKED,VALUE_CELSIUS}; 
+	node[nodeFuelTemp] =      (nodeStruct) {0x6008,47,255,0,1,valueTempFuel,valueNone, NODE_PROPERTY_LOCKED,VALUE_CELSIUS}; 
 	node[nodeFuelTempSensorBcoefficient] = (nodeStruct) {0x6009,3450,100,20000,10,valueNone,valueTempFuelRaw,NODE_PROPERTY_EDITABLE,VALUE_INT};  	
 	node[nodeFuelTempSensorNResistance] = (nodeStruct) {0x600a,4000,100,20000,10,valueNone,valueNone,NODE_PROPERTY_EDITABLE,VALUE_INT};  	
 	node[nodeFuelTempSensorNTemp] = (nodeStruct) {0x600b,1,0,255,1,valueNone,valueNone,NODE_PROPERTY_EDITABLE,VALUE_INT};  	
+
+	node[nodeFuelMapSmoothness] =  (nodeStruct) {0x1100,0,0,100,5,valueNone,valueNone, NODE_PROPERTY_EDITABLE,VALUE_INT};     
+	node[nodeInitialInjectionQuantity] =       (nodeStruct) {0x1101,120,0,1000,5,valueNone,valueNone, NODE_PROPERTY_EDITABLE,VALUE_INT};     
+	node[nodeQASync] =           (nodeStruct) {0x1101,0,0,1,1,valueNone,valueNone, NODE_PROPERTY_EDITABLE,VALUE_BOOLEAN};     
+	node[nodeFan1SwitchOnTemp] =  (nodeStruct) {0x1102,165,0,255,1,valueNone,valueFan1State, NODE_PROPERTY_EDITABLE,VALUE_CELSIUS};     
 
 	currentNode = LIST_RESET;
 

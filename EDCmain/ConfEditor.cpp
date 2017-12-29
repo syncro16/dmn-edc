@@ -126,7 +126,7 @@ void ConfEditor::pageOutputTests() {
 			break;
 		case 'A':
 		case 'a':
-			core.controls[Core::valueOutputFan] = !core.controls[Core::valueOutputFan];
+			core.controls[Core::valueFan1State] = !core.controls[Core::valueFan1State];
 			redrawView = true;
 			break;
 		case 't':
@@ -167,7 +167,7 @@ void ConfEditor::pageOutputTests() {
 		ansiGotoXy(1,6);
 		Serial.print(fetchFromFlash(confEditorOutputTestsFan));
 		ansiGotoXy(35,6);
-		Serial.print(core.controls[Core::valueOutputFan]?fetchFromFlash(confEditorOutputLabelOn):fetchFromFlash(confEditorOutputLabelOff));		
+		Serial.print(core.controls[Core::valueFan1State]?fetchFromFlash(confEditorOutputLabelOn):fetchFromFlash(confEditorOutputLabelOff));		
 		ansiGotoXy(1,7);
 		Serial.print(fetchFromFlash(confEditorOutputPumpAdvance));
 		ansiGotoXy(35,7);

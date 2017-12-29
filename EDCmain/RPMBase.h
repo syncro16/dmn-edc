@@ -11,6 +11,7 @@ class RPMBase {
 	RPMBase();
 	virtual void init();
 	virtual unsigned int getLatestMeasure();
+	virtual unsigned int getLatestMeasureFiltered();	
 	virtual unsigned int getLatestRawValue();
 	virtual int getInjectionTiming();
 	void measure();

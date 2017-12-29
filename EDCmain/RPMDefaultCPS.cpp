@@ -17,6 +17,12 @@
  *  
 */
 
+
+static volatile unsigned int injectionBegin;
+// record rotation speeds for a full engine cycle (720°)
+volatile unsigned int measurements[NUMBER_OF_CYLINDERS*2]; 
+unsigned char currentTick;
+
 volatile unsigned int rpmDuration;
 
 
@@ -87,6 +93,10 @@ void rpmTrigger() {
 	*/
 	rpmDuration = dur; // store duration to be calculated as RPM later
 	injectionBegin = 0;
+	measurements[currentTick] = dur;
+	currentTick++;
+	if (currentTick++>NUMBER_OF_CYLINDERS*2)
+		currentTick = 0;
 	rpmTimerEnable();
 
 	/* This reads (and smoothes) Quantity Adjuster position syncronized with RPM, 
@@ -117,6 +127,18 @@ unsigned int RPMDefaultCps::getLatestMeasure() {
 	sei();
 	return ret;
 }
+
+unsigned int RPMDefaultCps::getLatestMeasureFiltered() {
+	//TODO 
+	if (rpmDuration==0)
+		return 0;
+	// 64 = timer divider
+	cli();
+	unsigned int ret=((unsigned long)(60*F_CPU/64/NUMBER_OF_CYLINDERS)/((unsigned long)rpmDuration)); 
+	sei();
+	return ret;
+}
+
 unsigned int RPMDefaultCps::getLatestRawValue() {
 	return rpmDuration;
 }
