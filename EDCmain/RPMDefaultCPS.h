@@ -22,6 +22,7 @@ class RPMDefaultCps : public RPMBase {
 	unsigned int getLatestMeasureFiltered();
 	unsigned int getLatestRawValue();
 	int getInjectionTiming();
+	unsigned int getDeviationForCylinder(unsigned char cyl);
 	private:
 	void setupTimers();
 

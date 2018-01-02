@@ -220,11 +220,11 @@ public:
     static const unsigned char nodeFuelTempSensorBcoefficient = 82;
     static const unsigned char nodeFuelTempSensorNResistance = 83;
     static const unsigned char nodeFuelTempSensorNTemp = 84;
-
+	
     // misc settings
     static const unsigned char nodeFuelMapSmoothness = 85;
     static const unsigned char nodeInitialInjectionQuantity = 86;
-    static const unsigned char nodeQASync = 87;
+    static const unsigned char nodeMaximalInjectionQuantity = 87;
     static const unsigned char nodeFan1SwitchOnTemp = 88;
     static const unsigned char NODE_MAX = 88;
     

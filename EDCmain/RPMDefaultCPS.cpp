@@ -60,6 +60,7 @@ static inline void rpmTimerSetup()  {
  	rpmDuration = 0;
  }
  
+
 ISR(TIMER1_COMPA_vect) 
 {	
 	// Timer has waited rotation for too long, declare engine as stopped
@@ -67,6 +68,7 @@ ISR(TIMER1_COMPA_vect)
 	core.controls[Core::valueEngineRPM] = 0;
 	core.node[Core::nodeEngineRPM].value = 0;
 	core.controls[Core::valueEngineRPMFiltered] = 0;   
+	memset(measurements,0,sizeof(measurements));
 }
 
 
@@ -102,14 +104,6 @@ void rpmTrigger() {
 		currentTick = 0;
 	rpmTimerEnable();
 
-	/* This reads (and smoothes) Quantity Adjuster position syncronized with RPM, 
-	this minimizes errors during reading the position (there is mechanical jitter on qa position) */
-	if (core.node[Core::nodeQASync].value 
-		&& (core.controls[Core::valueRunMode] >= ENGINE_STATE_IDLE 
-			&& core.controls[Core::valueRunMode] <= ENGINE_STATE_LOW_RPM_RANGE )) {
-		core.controls[Core::valueQAfeedbackActual] = (core.controls[Core::valueQAfeedbackActual]+analogRead(PIN_ANALOG_QA_POS))/2;     
-	}
-
 }
 
 // Class methods
@@ -131,10 +125,10 @@ unsigned int RPMDefaultCps::getLatestMeasure() {
 	return ret;
 }
 
+/*
+	todo: add teeth mapping function for correct cylinder phasing
+*/
 unsigned int RPMDefaultCps::getLatestMeasureFiltered() {
-	//TODO 
-	if (rpmDuration==0)
-		return 0;
 	// 64 = timer divider
 	unsigned long total = 0;
 	char t = currentTick;
@@ -142,9 +136,13 @@ unsigned int RPMDefaultCps::getLatestMeasureFiltered() {
 	for (unsigned char idx=0;idx<NUMBER_OF_CYLINDERS;idx++) {
 		t--;
 		if (t<0) t=NUMBER_OF_CYLINDERS*2-1;
-		total += measurements[t];
+		total += measurements[(unsigned)t];
 	}
-	return total/(NUMBER_OF_CYLINDERS*2);
+	total = total/(NUMBER_OF_CYLINDERS);
+	//TODO 
+	if (total==0)
+		return 0;	
+	return ((unsigned long)(60*F_CPU/64/NUMBER_OF_CYLINDERS)/((unsigned long)total)); 
 }
 
 unsigned int RPMDefaultCps::getLatestRawValue() {
@@ -163,3 +161,25 @@ int RPMDefaultCps::getInjectionTiming() {
 	}
 }
 
+unsigned int RPMDefaultCps::getDeviationForCylinder(unsigned char cyl) {
+	cli();
+	unsigned int v1=measurements[cyl*2];
+	unsigned int v2=measurements[cyl*2+1];
+	sei();
+	static long cyl0Timing;
+	
+	if (cyl == 0) {
+		// cache some things to speed up things		
+		cyl0Timing = (v1 + v2)/2;
+		return cyl0Timing;
+	}
+	if (cyl >= NUMBER_OF_CYLINDERS)
+		return 0;
+	long deviation = cyl0Timing-(v1+v2)/2;
+	if (deviation<-32000)
+		return -32000;
+	if (deviation>32000)
+		return 32000;
+		
+	return deviation;
+}

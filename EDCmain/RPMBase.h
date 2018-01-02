@@ -14,6 +14,8 @@ class RPMBase {
 	virtual unsigned int getLatestMeasureFiltered();	
 	virtual unsigned int getLatestRawValue();
 	virtual int getInjectionTiming();
+	virtual unsigned int getDeviationForCylinder(unsigned char cyl);
+	
 	void measure();
 	unsigned char getError();
 	//void fullRotationTrigger();

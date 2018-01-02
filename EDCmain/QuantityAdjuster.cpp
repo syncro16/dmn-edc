@@ -4,6 +4,7 @@
 #include "TimerThree.h"
 #include "utils.h"
 #include "DTC.h"
+#include "BackgroundADC.h"
 
 QuantityAdjuster::QuantityAdjuster() {
 }
@@ -48,7 +49,7 @@ void QuantityAdjuster::update() {
 
 	core.controls[Core::valueQAfeedbackSetpoint] = setPoint; 
 
-	core.controls[Core::valueQAfeedbackActual] = safeAnalogReadFromInterrupt(PIN_ANALOG_QA_POS);   
+	core.controls[Core::valueQAfeedbackActual] = adc.readValue(PIN_ANALOG_QA_POS);   
 	
 	//core.controls[Core::valueQAfeedbackActual] = analogRead(PIN_ANALOG_QA_POS);      
 

@@ -19,9 +19,17 @@ int RPMBase::getInjectionTiming() {
 }
 
 void RPMBase::measure() {
-	core.controls[Core::valueEngineRPMFiltered] = getLatestMeasure();
+	core.controls[Core::valueEngineRPMFiltered] = getLatestMeasureFiltered();
 	core.controls[Core::valueEngineRPM] = getLatestMeasure();
 	core.controls[Core::valueEngineRPMRaw] = getLatestRawValue();
+
+	core.controls[Core::valueRpmDeviation1] = getDeviationForCylinder(0);
+	core.controls[Core::valueRpmDeviation2] = getDeviationForCylinder(1);
+	core.controls[Core::valueRpmDeviation3] = getDeviationForCylinder(2);
+	core.controls[Core::valueRpmDeviation4] = getDeviationForCylinder(3);
+	core.controls[Core::valueRpmDeviation5] = getDeviationForCylinder(4);
+	core.controls[Core::valueRpmDeviation6] = getDeviationForCylinder(5);
+
 }
 
 unsigned char RPMBase::getError() {

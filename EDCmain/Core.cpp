@@ -210,8 +210,8 @@ Core::Core() {
 	node[nodeFuelTempSensorNTemp] = (nodeStruct) {0x600b,1,0,255,1,valueNone,valueNone,NODE_PROPERTY_EDITABLE,VALUE_INT};  	
 
 	node[nodeFuelMapSmoothness] =  (nodeStruct) {0x1100,0,0,100,5,valueNone,valueNone, NODE_PROPERTY_EDITABLE,VALUE_INT};     
-	node[nodeInitialInjectionQuantity] =       (nodeStruct) {0x1101,120,0,1000,5,valueNone,valueNone, NODE_PROPERTY_EDITABLE,VALUE_INT};     
-	node[nodeQASync] =           (nodeStruct) {0x1101,0,0,1,1,valueNone,valueNone, NODE_PROPERTY_EDITABLE,VALUE_BOOLEAN};     
+	node[nodeInitialInjectionQuantity] =   (nodeStruct) {0x1101,120,0,1000,5,valueNone,valueNone, NODE_PROPERTY_EDITABLE,VALUE_INT};     
+	node[nodeMaximalInjectionQuantity] =   (nodeStruct) {0x1103,1020,0,1023,5,valueNone,valueNone, NODE_PROPERTY_EDITABLE,VALUE_BOOLEAN};     
 	node[nodeFan1SwitchOnTemp] =  (nodeStruct) {0x1102,165,0,255,1,valueNone,valueFan1State, NODE_PROPERTY_EDITABLE,VALUE_CELSIUS};     
 
 	currentNode = LIST_RESET;
