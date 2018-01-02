@@ -72,7 +72,7 @@ void ConfEditor::printHeader() {
 			status = (char*)&systemStatusMessage;
 			break;
 		case 1:
-			itoa(core.controls[Core::valueEngineRPM],buf,10);
+			itoa(core.controls[Core::valueEngineRPMFiltered],buf,10);
 			memcpy(buf+strlen(buf)," RPM",5);
 			status = buf;
 			break;
@@ -317,8 +317,8 @@ void ConfEditor::pageVisualizer() {
 			Serial.print("*");
 		ansiClearEol();	
 	}		
-	if ((core.controls[Core::valueEngineRPM]/10)*10 != oldRPM) {
-		oldRPM = (core.controls[Core::valueEngineRPM]/10)*10;
+	if ((core.controls[Core::valueEngineRPMFiltered]/10)*10 != oldRPM) {
+		oldRPM = (core.controls[Core::valueEngineRPMFiltered]/10)*10;
 		ansiGotoXy(13,4+2*7);
 		printIntWithPadding(oldRPM,5,' ');
 		ansiClearEol();
