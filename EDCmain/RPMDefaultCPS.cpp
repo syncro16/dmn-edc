@@ -95,7 +95,10 @@ void rpmTrigger() {
 	injectionBegin = 0;
 	measurements[currentTick] = dur;
 	currentTick++;
-	if (currentTick++>NUMBER_OF_CYLINDERS*2)
+
+//	0 1 2 3 4 5 6 7 8 9
+
+	if (currentTick>(NUMBER_OF_CYLINDERS*2-1))
 		currentTick = 0;
 	rpmTimerEnable();
 
@@ -133,10 +136,15 @@ unsigned int RPMDefaultCps::getLatestMeasureFiltered() {
 	if (rpmDuration==0)
 		return 0;
 	// 64 = timer divider
-	cli();
-	unsigned int ret=((unsigned long)(60*F_CPU/64/NUMBER_OF_CYLINDERS)/((unsigned long)rpmDuration)); 
-	sei();
-	return ret;
+	unsigned long total = 0;
+	char t = currentTick;
+	
+	for (unsigned char idx=0;idx<NUMBER_OF_CYLINDERS;idx++) {
+		t--;
+		if (t<0) t=NUMBER_OF_CYLINDERS*2-1;
+		total += measurements[t];
+	}
+	return total/(NUMBER_OF_CYLINDERS*2);
 }
 
 unsigned int RPMDefaultCps::getLatestRawValue() {

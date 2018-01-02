@@ -136,7 +136,7 @@ void refreshSlowSensors() {
 	int scaledValue;
 
  	// Engine TEMP
-	value = analogRead(PIN_ANALOG_TEMP_COOLANT);
+	value = safeAnalogRead(PIN_ANALOG_TEMP_COOLANT);
 	if (value > ANALOG_INPUT_HIGH_STATE_LIMIT) {
 		// generate error only if map is configured and sensor reading is not present
 		dtc.setError(DTC_ENGINE_TEMP_UNCONNECTED);
@@ -146,7 +146,7 @@ void refreshSlowSensors() {
 	}
 	
 	// Fuel TEMP
-	value = analogRead(PIN_ANALOG_TEMP_FUEL);
+	value = safeAnalogRead(PIN_ANALOG_TEMP_FUEL);
 	if (value > ANALOG_INPUT_HIGH_STATE_LIMIT) {
 		// generate error only if map is configured and sensor reading is not present
 		dtc.setError(DTC_FUEL_TEMP_UNCONNECTED);
@@ -156,7 +156,7 @@ void refreshSlowSensors() {
 	}
 
 	// Air TEMP
-	value = analogRead(PIN_ANALOG_TEMP_INTAKE);
+	value = safeAnalogRead(PIN_ANALOG_TEMP_INTAKE);
 	if (value > ANALOG_INPUT_HIGH_STATE_LIMIT) {
 		// generate error only if map is configured and sensor reading is not present
 		dtc.setError(DTC_AIR_TEMP_UNCONNECTED);
@@ -166,7 +166,7 @@ void refreshSlowSensors() {
 	}
 
 	// Gearbox TEMP
-//	value = analogRead(PIN_ANALOG_TEMP_GEARBOX);
+//	value = safeAnalogRead(PIN_ANALOG_TEMP_GEARBOX);
 /*	scaledValue = mapLookUp(core.maps[Core::mapIdxAirTempSensorMap], value / 4, 0);		
 	if (value > ANALOG_INPUT_HIGH_STATE_LIMIT) {
 		// generate error only if map is configured and sensor reading is not present
@@ -178,7 +178,7 @@ void refreshSlowSensors() {
 
 	// Throttle position sensor(s) - Common VW sensor type
 	// swiches for idle and full gas (later one not used)
-	value = analogRead(PIN_ANALOG_TPS_POS);
+	value = safeAnalogRead(PIN_ANALOG_TPS_POS);
 	core.controls[Core::valueTPSRaw]=value;
 
 	// Check TPS it is connected, otherwise apply limp mode amount (about 15%) 
@@ -201,7 +201,7 @@ void refreshSlowSensors() {
 ////		}
 //	}
 
-	value = analogRead(PIN_ANALOG_MAP);
+	value = safeAnalogRead(PIN_ANALOG_MAP);
 	core.controls[Core::valueMAPRaw] = value; 
 	static int mapFailCount = 0;
 	if (value > ANALOG_INPUT_HIGH_STATE_LIMIT) {
@@ -757,8 +757,8 @@ void setup() {
 	
 	interruptHandlerArray[2].handler=refreshFastSensors; 
 	interruptHandlerArray[2].divider=4;
-	interruptHandlerArray[3].handler=refreshSlowSensors; 
-	interruptHandlerArray[3].divider=32;
+//	interruptHandlerArray[3].handler=refreshSlowSensors; 
+//	interruptHandlerArray[3].divider=32;
 	
 //	attachInterrupt(0, rpmTrigger, RISING);  // Interrupt 0 -- PIN2 -- LM1815 gated output 
 //	attachInterrupt(1, needleTrigger,FALLING );  // From voltage comparator, default +5v
@@ -818,7 +818,7 @@ char loopCount = 0;
 
 void loop() {
 	boolean ignoreSleep = false;
-//	refreshSlowSensors();
+	refreshSlowSensors();
 	doBoostControl();
 	doTimingControl();
 	doRelayControl();

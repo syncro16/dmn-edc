@@ -51,4 +51,8 @@ int toTps(int raw);
 
 int tempSensorBcoefficientCalc(int raw,int bCoEfficient, int nResistance,int nTemp);
 
+int safeAnalogRead(int pin);
+int safeAnalogReadFromInterrupt(int pin);
+float applyOversampling(int pin,float input);
+
 #endif

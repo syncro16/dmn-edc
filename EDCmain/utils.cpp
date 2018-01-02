@@ -5,6 +5,7 @@
 #include "Arduino.h"
 #include "Core.h"
 #include "defines.h"
+#include "DTC.h"
 
 // EEProm
 
@@ -420,7 +421,7 @@ int toTps(int raw) {
 }
 
 int tempSensorBcoefficientCalc(int raw,int bCoEfficient, int nResistance,int nTemp) {
-    float seriesResistor = 3000;;
+    float seriesResistor = TEMP_SENSOR_SERIES_RESITOR;
     float nominalResistance = nResistance;
     float nominalTemp = nTemp;
 
@@ -445,28 +446,57 @@ int tempSensorBcoefficientCalc(int raw,int bCoEfficient, int nResistance,int nTe
         
     return ret;
 }
-/*
-unsigned char simulatePressureActuator(int maxPressure,int currentPressure) {
-    
-    unsigned int i,ret;
-    
-   
-    if (maxPressure == 0)
-        return 255;
-    
-    // slighty logaritmic movement based on map
-    long int idx = (((long int)currentPressure*100/(long int)maxPressure)*256)/100;
-    if (idx<0) {
-        i = 0;
-    } else if (idx>255) {
-        i = 255;
-
-    } else {
-       i = mapLookUp(boostMovementRemap,idx,0); 
-    }  
-    
-     return i;
-
-}*/
 
 
+
+// a0 54, a15 69
+// 
+static volatile float aOutput[PIN_A15-PIN_A0+1]={-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1};
+static volatile float aOversamplingFactor[PIN_A15-PIN_A0+1] = {
+    PIN_ANALOG_SMOOTHING_A0,
+    PIN_ANALOG_SMOOTHING_A1,
+    PIN_ANALOG_SMOOTHING_A2,
+    PIN_ANALOG_SMOOTHING_A3,
+    PIN_ANALOG_SMOOTHING_A4,
+    PIN_ANALOG_SMOOTHING_A5,
+    PIN_ANALOG_SMOOTHING_A6,
+    PIN_ANALOG_SMOOTHING_A7,
+    PIN_ANALOG_SMOOTHING_A8,
+    PIN_ANALOG_SMOOTHING_A9,
+    PIN_ANALOG_SMOOTHING_A10,
+    PIN_ANALOG_SMOOTHING_A11,
+    PIN_ANALOG_SMOOTHING_A12,
+    PIN_ANALOG_SMOOTHING_A13,
+    PIN_ANALOG_SMOOTHING_A14,
+    PIN_ANALOG_SMOOTHING_A15,
+};
+
+static volatile unsigned char analogReadState = false;
+int safeAnalogRead(int pin) {
+    analogReadState = 0;
+    int input = analogRead(pin);
+    // if state is set, then the interrupt handler has probably screwed up earlier conversion,    
+    if (analogReadState)  {
+   		dtc.setError(DTC_TRAP_2);  
+        analogReadState = 0;
+        // do not trust interrupted signal, use old output value instead
+        return aOutput[pin-PIN_A0];
+    }
+    int ret = applyOversampling(pin,input);
+    return ret;
+}
+int safeAnalogReadFromInterrupt(int pin) {
+    analogReadState = 1;
+//   int ret = applyOversampling(pin,analogRead(pin));
+    int ret = analogRead(pin);
+    return ret;
+}
+
+float applyOversampling(int pin,float input) {
+    unsigned char idx = pin - PIN_A0;
+    if (aOutput[idx] == -1)
+        aOutput[idx] = input;
+    aOutput[idx] += (input-aOutput[idx]) * aOversamplingFactor[idx];
+    return round(aOutput[idx]);
+//    output += ((input-output)*a);
+}
