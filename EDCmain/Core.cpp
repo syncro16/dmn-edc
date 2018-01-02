@@ -94,7 +94,7 @@ const char nodeDescription[][55] PROGMEM = {
 	"Temp Sensor, fuel: nominal temperature",	
 	"Fuelmap smoothness", // 85
 	"Initial Injection Quantity", // 86
-	"QA reading sync'd with RPM", // 87	
+	"Maximal Injection Quantity", // 87	
 	"Fan#1 Switch on temperature" // 88
 	""
 };
@@ -211,7 +211,7 @@ Core::Core() {
 
 	node[nodeFuelMapSmoothness] =  (nodeStruct) {0x1100,0,0,100,5,valueNone,valueNone, NODE_PROPERTY_EDITABLE,VALUE_INT};     
 	node[nodeInitialInjectionQuantity] =   (nodeStruct) {0x1101,120,0,1000,5,valueNone,valueNone, NODE_PROPERTY_EDITABLE,VALUE_INT};     
-	node[nodeMaximalInjectionQuantity] =   (nodeStruct) {0x1103,1020,0,1023,5,valueNone,valueNone, NODE_PROPERTY_EDITABLE,VALUE_BOOLEAN};     
+	node[nodeMaximalInjectionQuantity] =   (nodeStruct) {0x1103,1020,0,1023,5,valueNone,valueNone, NODE_PROPERTY_EDITABLE,VALUE_INT};     
 	node[nodeFan1SwitchOnTemp] =  (nodeStruct) {0x1102,165,0,255,1,valueNone,valueFan1State, NODE_PROPERTY_EDITABLE,VALUE_CELSIUS};     
 
 	currentNode = LIST_RESET;
