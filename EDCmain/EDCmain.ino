@@ -33,6 +33,10 @@ Todo:
 - serial line errors?
 - log injection differences on rpm
 
+- cap mod rpm + stronger pullup
+- qa feedback unstable on middle range ? worn out? try faster pwm?
+- idle pid to be negative too
+
 */
 #include "RPMDefaultCps.h"
 //#include "RPMCustomCps.h"
@@ -47,6 +51,9 @@ Todo:
 #include "PID.h"
 #include "TachoOut.h"
 #include "BackgroundADC.h"
+
+extern volatile long rpmMax;
+extern volatile long rpmMin;
 
 // Crankshaft position sensor decoding, use RPMDefaultCps or RPMHiDensityCps 
 static RPMDefaultCps rpm;
@@ -94,6 +101,11 @@ volatile static char calls=0;
 
 static int idleLastCalculatedFuelAmount; 
 void doIdlePidControl() {
+	if (core.node[Core::nodeIdleAdjusting].value == 0) {
+		idleLastCalculatedFuelAmount = 0;
+		core.controls[Core::valueIdlePIDCorrection] = 0;
+		return;
+	}
 	/* PID */ 
 	if (idleLastCalculatedFuelAmount>0)
 		idleLastCalculatedFuelAmount--;
@@ -119,6 +131,9 @@ void doIdlePidControl() {
 			(int*)&core.controls[Core::valueEngineRPMFiltered],
 			(int*)&core.controls[Core::valueIdlePIDCorrection]
 			);
+
+	if (core.controls[Core::valueEngineRPMFiltered] == 0)
+		idlePidControl.reset();		
 
 
 	idleMinFuel = core.node[Core::nodeIdleMinFuel].value; // JOOSE
@@ -503,6 +518,7 @@ void refreshFastSensors() {
 	if (core.controls[Core::valueEngineRPMFiltered] == 0 && core.node[Core::nodeFuelCutAtStall].value == 1) {
 		core.controls[Core::valueRunMode]=ENGINE_STATE_STOPPED; // Stopped  		
 		// fuelAmount = 0;
+
 		fuelAmount = core.node[Core::nodeInitialInjectionQuantity].value;
 	} else {
 		int rpmCorrected = mapValues(core.controls[Core::valueEngineRPMFiltered],0,core.node[Core::nodeControlMapScaleRPM].value);   
@@ -598,8 +614,8 @@ void refreshFastSensors() {
 			fuelAmount = core.controls[Core::valueFuelBaseAmount];
 		
 			// Smooth transtion from idle
-   			if (idleLastCalculatedFuelAmount>fuelAmount) 
-				fuelAmount = idleLastCalculatedFuelAmount;
+//   			if (idleidalculatedFuelAmount>fuelAmount) 
+//				fuelAmount = idleLastCalculatedFuelAmount;
 
 			if (fuelAmount) {
 				// Enrichment amount is TPS% * fuel enrichment map value to smooth apply of enrichment
@@ -609,7 +625,10 @@ void refreshFastSensors() {
 		}
 
 	if (core.node[Core::nodeFuelMapSmoothness].value>0) {
-		float a1,a2,v1,v2,r;
+		float input = fuelAmount;
+		float output = core.controls[Core::valueFuelAmount];
+	    output += (input-output) * ((float)(100-core.node[Core::nodeFuelMapSmoothness].value)/100.0);
+	/*	float a1,a2,v1,v2,r;
 		a1 = core.controls[Core::valueFuelAmount];
 		a2 = fuelAmount;
 		v1 = (float)(core.node[Core::nodeFuelMapSmoothness].value)/100.0;
@@ -618,20 +637,19 @@ void refreshFastSensors() {
 
 		if (core.controls[Core::valueRunMode] != ENGINE_STATE_STOPPED)
 			r += core.controls[Core::valueIdlePIDCorrection];
-	
-		core.controls[Core::valueFuelAmount] = r;	
-		core.controls[Core::valueFuelAmount8bit] = r/4;
-	} else {
-		if (core.controls[Core::valueRunMode] != ENGINE_STATE_STOPPED)
-			fuelAmount += core.controls[Core::valueIdlePIDCorrection];
-		
+	*/
+		core.controls[Core::valueFuelAmount] = output;	
+	} else {		
 		core.controls[Core::valueFuelAmount] = fuelAmount;	
-		core.controls[Core::valueFuelAmount8bit] = fuelAmount/4;
 	}
 
+	if (core.controls[Core::valueRunMode] != ENGINE_STATE_STOPPED)
+		core.controls[Core::valueFuelAmount] += core.controls[Core::valueIdlePIDCorrection];
+	core.controls[Core::valueFuelAmount8bit] = core.controls[Core::valueFuelAmount]/4;
 
-	if (fuelAmount>core.node[Core::nodeMaximalInjectionQuantity].value)	
-		fuelAmount = core.node[Core::nodeMaximalInjectionQuantity].value;		
+//	if (fuelAmount>core.node[Core::nodeMaximalInjectionQuantity].value)	
+//		fuelAmount = core.node[Core::nodeMaximalInjectionQuantity].value;		
+
 
 	adjuster.setPosition(core.controls[Core::valueFuelAmount]);
 
@@ -686,7 +704,7 @@ void doRelayControl() {
 const char main_pressAKeyString[] PROGMEM = " bytes free.\r\n\r\nPress a key for configuration interface ...";
 
 void setup() {
-	pinMode(PIN_INPUT_RPM,INPUT_PULLUP);
+	pinMode(PIN_INPUT_RPM,INPUT);
 	pinMode(PIN_INPUT_NEEDLELIFTSENSOR,INPUT_PULLUP);
 
 	pinMode(PIN_ANALOG_QA_POS,INPUT);
@@ -820,22 +838,28 @@ char loopCount = 0;
 
 void loop() {
 	boolean ignoreSleep = false;
+	doIdlePidControl();
 	refreshSlowSensors();
 	doBoostControl();
 	doTimingControl();
-	doRelayControl();
-	doIdlePidControl();
 
-	static int rpmMin,rpmMax;
+//	static int rpmMin,rpmMax;
 	if (loopCount % 30 == 0) {	
 		if (halfSeconds<255) 
 			halfSeconds++;
 	}
+	if (loopCount % 2 == 0) {
+		doRelayControl();
+	}
 	if (loopCount == 60) {
 		// Log some "short term" differencies
-		core.controls[Core::valueEngineRPMJitter]=rpmMax-rpmMin;
-		rpmMin = core.controls[Core::valueEngineRPM];
-		rpmMax = core.controls[Core::valueEngineRPM];
+		unsigned int a=rpmMax;
+		unsigned int b=rpmMin;
+		core.controls[Core::valueEngineRPMJitter]=a-b;
+		cli();
+		rpmMin = 0xffff;
+		rpmMax = 0;
+		sei();
 		loopCount=0;    
 
 		int ret = tempSensorBcoefficientCalc(
@@ -862,11 +886,11 @@ void loop() {
 			);
 		core.controls[Core::valueTempIntake] = ret;				
 	}  
-	if (core.controls[Core::valueEngineRPM]<rpmMin) 
+/*	if (core.controls[Core::valueEngineRPM]<rpmMin) 
 		rpmMin = core.controls[Core::valueEngineRPM];
 	if (core.controls[Core::valueEngineRPM]>rpmMax) 
 		rpmMax = core.controls[Core::valueEngineRPM];
-
+*/
 	
 	loopCount++;
 	

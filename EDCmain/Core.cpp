@@ -138,13 +138,13 @@ Core::Core() {
 
 	node[nodeIdleAdjusting] =   (nodeStruct) {0x1018,0,0,1,1,valueNone,valueIdlePIDCorrection,NODE_PROPERTY_EDITABLE,VALUE_BOOLEAN};  
 	node[nodeIdleSpeedTarget] = (nodeStruct) {0x1019,830,350,1600,1,valueEngineRPMFiltered,valueNone,NODE_PROPERTY_EDITABLE,VALUE_INT};  
-	node[nodeIdleKp] =          (nodeStruct) {0x101A,9,0,300,1,valueNone,valueNone,NODE_PROPERTY_EDITABLE,VALUE_INT};  
+	node[nodeIdleKp] =          (nodeStruct) {0x101A,2,0,300,1,valueNone,valueNone,NODE_PROPERTY_EDITABLE,VALUE_INT};  
 	node[nodeIdleKi] =          (nodeStruct) {0x101B,1,0,300,1,valueNone,valueNone,NODE_PROPERTY_EDITABLE,VALUE_INT};  
-	node[nodeIdleKd] =          (nodeStruct) {0x1032,13,0,300,1,valueNone,valueNone,NODE_PROPERTY_EDITABLE,VALUE_INT};  
+	node[nodeIdleKd] =          (nodeStruct) {0x1032,1,0,300,1,valueNone,valueNone,NODE_PROPERTY_EDITABLE,VALUE_INT};  
 	node[nodeIdlePIDSpeed] =    (nodeStruct) {0x1035,15,1,140,1,valueNone,valueNone,NODE_PROPERTY_EDITABLE,VALUE_INT};  	
 	node[nodeIdlePIDBias] =     (nodeStruct) {0x1036,33,1,200,1,valueNone,valueNone,NODE_PROPERTY_EDITABLE,VALUE_INT};  
-	node[nodeIdleMaxFuel] =     (nodeStruct) {0x1033,520,0,1024,5,valueNone,valueNone,NODE_PROPERTY_EDITABLE,VALUE_INT};  
-	node[nodeIdleMinFuel] =     (nodeStruct) {0x1034,140,0,1024,5,valueNone,valueNone,NODE_PROPERTY_EDITABLE,VALUE_INT};  
+	node[nodeIdleMaxFuel] =     (nodeStruct) {0x1033,40,0,1024,5,valueNone,valueNone,NODE_PROPERTY_EDITABLE,VALUE_INT};  
+	node[nodeIdleMinFuel] =     (nodeStruct) {0x1034,0,-40,1024,5,valueNone,valueNone,NODE_PROPERTY_EDITABLE,VALUE_INT};  
 
 	node[nodeRPMDSP] =          (nodeStruct) {0x101C,0,0,3,1,valueNone,valueNone,NODE_PROPERTY_EDITABLE,VALUE_INT};  
 
@@ -163,8 +163,8 @@ Core::Core() {
 	node[nodeGenericDebugValue] = 
 	                            (nodeStruct) {0x1027,0,0,1023,16,valueNone,valueNone,NODE_PROPERTY_EDITABLE,VALUE_KPA};  
 	node[nodeQADebugJitter] =   (nodeStruct) {0x1028,0,0,1024,1,valueNone,valueQAJitter,NODE_PROPERTY_LOCKED,VALUE_INT};  
-	node[nodeQAPIDKp] =         (nodeStruct) {0x1029,52/*80*/,0,1000,1,valueNone,valueQAPIDPparam,NODE_PROPERTY_EDITABLE,VALUE_INT};  
-	node[nodeQAPIDKi] =         (nodeStruct) {0x102A,9/*3*/,0,1000,1,valueNone,valueQAPIDIparam,NODE_PROPERTY_EDITABLE,VALUE_INT};  
+	node[nodeQAPIDKp] =         (nodeStruct) {0x1029,54/*80*/,0,1000,1,valueNone,valueQAPIDPparam,NODE_PROPERTY_EDITABLE,VALUE_INT};  
+	node[nodeQAPIDKi] =         (nodeStruct) {0x102A,10/*3*/,0,1000,1,valueNone,valueQAPIDIparam,NODE_PROPERTY_EDITABLE,VALUE_INT};  
 	node[nodeQAPIDKd] =         (nodeStruct) {0x102B,0,0,1000,1,valueNone,valueQAPIDDparam,NODE_PROPERTY_EDITABLE,VALUE_INT};  
 	node[nodeQAPIDSpeed] =      (nodeStruct) {0x102C,25,1,128,1,valueNone,valueNone,NODE_PROPERTY_EDITABLE,VALUE_INT};     
 	node[nodeQAPIDBias] =       (nodeStruct) {0x102D,55,1,200,5,valueNone,valueNone,NODE_PROPERTY_EDITABLE,VALUE_INT};      

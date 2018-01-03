@@ -19,7 +19,7 @@ int RPMBase::getInjectionTiming() {
 }
 
 void RPMBase::measure() {
-	core.controls[Core::valueEngineRPMFiltered] = getLatestMeasureFiltered();
+	core.controls[Core::valueEngineRPMFiltered] = getLatestMeasure();//getLatestMeasureFiltered();
 	core.controls[Core::valueEngineRPM] = getLatestMeasure();
 	core.controls[Core::valueEngineRPMRaw] = getLatestRawValue();
 

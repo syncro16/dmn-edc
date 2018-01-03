@@ -29,6 +29,7 @@ public:
     PID(int *p,int *i,int *d,int *minOutput,int *maxOutput,int *speed,int *bias,int *input,int *output);
     void setPosition(int s);
     void calculate();
+    void reset();
 };
 
 #endif

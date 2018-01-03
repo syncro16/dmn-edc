@@ -36,8 +36,8 @@ ISR(ADC_vect) {
 }
 
 void BackgroundADC::init() {
-	for (unsigned char i=A0;i<=A15;i++)
-		pinMode(i,INPUT_PULLUP);
+//	for (unsigned char i=A0;i<=A15;i++)
+//		pinMode(i,INPUT_PULLUP);
 	
 	cli();//disable interrupts
 	ADCSRA = 0;
@@ -55,11 +55,11 @@ void BackgroundADC::init() {
 	sbi(ADCSRA, ADSC);
 
 	sei();//enable interrupt
-	delay(2); // allow some interrupts happen to fill buffer to make readAvarageValue work perfectly from start
+	delay(10); // allow some interrupts happen to fill buffer to make readAvarageValue work perfectly from start
 }
 
 unsigned int BackgroundADC::readValue(unsigned char pin) {
-	if (pin>PIN_A0)
+	if (pin >= PIN_A0)
 		pin = pin-PIN_A0;
 	unsigned int ret;
 	cli();
@@ -69,7 +69,7 @@ unsigned int BackgroundADC::readValue(unsigned char pin) {
 }
 
 unsigned int BackgroundADC::readValueAvarage(unsigned char pin) {
-	if (pin>PIN_A0)
+	if (pin >= PIN_A0)
 		pin = pin-PIN_A0;
 	unsigned int input = readValue(pin);
     if (aOutput[pin] == -1)

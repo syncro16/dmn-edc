@@ -21,6 +21,10 @@ void PID::setPosition(int s) {
 	this->targetSetPoint = s;
 }
 
+void PID::reset() {
+	integral = 0;
+}
+
 void PID::calculate() {
 	if (setPoint < targetSetPoint) {
 		setPoint = setPoint + *speed;

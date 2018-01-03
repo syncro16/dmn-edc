@@ -68,16 +68,19 @@ ISR(TIMER1_COMPA_vect)
 	core.controls[Core::valueEngineRPM] = 0;
 	core.node[Core::nodeEngineRPM].value = 0;
 	core.controls[Core::valueEngineRPMFiltered] = 0;   
+	rpmDuration = 0;
 	memset(measurements,0,sizeof(measurements));
 }
 
 
 
 volatile unsigned char *errCnt;
-volatile long rpmAvg;
+volatile long rpmMax;
+volatile long rpmMin;
 
 void rpmTrigger() { 
 	unsigned int dur = TCNT1;
+	TCNT1 = 0;
 	/*if (core.controls[Core::valueRunMode] >= ENGINE_STATE_IDLE ) {
 		// allow 10% error, otherwise 
 		long maxErr = dur/10;
@@ -94,14 +97,19 @@ void rpmTrigger() {
 	}
 	*/
 	rpmDuration = dur; // store duration to be calculated as RPM later
+	if (dur<rpmMin)
+		rpmMin = dur;
+	if (dur>rpmMax)
+		rpmMax = dur;
+		
 	injectionBegin = 0;
 	measurements[currentTick] = dur;
 	currentTick++;
 
 //	0 1 2 3 4 5 6 7 8 9
-
 	if (currentTick>(NUMBER_OF_CYLINDERS*2-1))
 		currentTick = 0;
+
 	rpmTimerEnable();
 
 }
@@ -116,7 +124,7 @@ void RPMDefaultCps::init() {
 }
 
 unsigned int RPMDefaultCps::getLatestMeasure() {
-	if (rpmDuration==0)
+	if (rpmDuration<10)
 		return 0;
 	// 64 = timer divider
 	cli();
