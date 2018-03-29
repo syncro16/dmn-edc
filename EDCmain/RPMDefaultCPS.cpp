@@ -41,6 +41,8 @@ static inline void rpmTimerSetup()  {
  	TIMSK1 |= (1 << OCIE1A); // enable timer compare interrupt
  //	sei();
 	//attachInterrupt(0, rpmTrigger, RISING);  // Interrupt 0 -- PIN2 -- LM1815 gated output 
+	
+	
 	attachInterrupt(0, rpmTrigger, FALLING);  // Interrupt 0 -- PIN2 -- Cherry GS sensor 
 
  }

@@ -38,7 +38,7 @@ Todo:
 - idle pid to be negative too
 
 */
-#include "RPMDefaultCps.h"
+#include "RPMDefaultCPS.h"
 //#include "RPMCustomCps.h"
 #include "ConfEditor.h"
 #include "Core.h"
@@ -417,7 +417,7 @@ void doBoostControl() {
 			}
 			idx = idx;
 	   	
-		   	core.controls[Core::valueN75DutyCycle] =mapLookUp(core.maps[Core::mapIdxActuatorTension],idx,0); 
+		   	core.controls[Core::valueN75DutyCycle] = mapLookUp(core.maps[Core::mapIdxActuatorTension],idx,0); 
 		   	break;
 		  	case 4:
 			// Classic vnt lda style + small PID correction
@@ -765,6 +765,7 @@ void setup() {
 
 
 	tacho.init();
+
 	/*
 	// Setting ADC prescaler to /16 (http://www.arduino.cc/cgi-bin/yabb2/YaBB.pl?num=1208715493/11 )
 	sbi(ADCSRA,ADPS2) ;
@@ -773,9 +774,12 @@ void setup() {
 	*/
 	Serial.begin(115200);
 	ansiClearScreen();
-	
+
 	interruptHandlerArray[1].handler=refreshFastSensors; 
 	interruptHandlerArray[1].divider=4;
+
+
+
 //	interruptHandlerArray[3].handler=refreshSlowSensors; 
 //	interruptHandlerArray[3].divider=32;
 	
@@ -813,7 +817,6 @@ void setup() {
 	//TCCR2B = TCCR2B & (B11111000 | B00000001);    // set timer 2 divisor to     1 for PWM frequency of 31372.55 Hz
 
 	analogWrite(PIN_PWM_NLS_REF_VOLTAGE,73);
-
 }
 
 void setupQATimers() {
@@ -826,6 +829,31 @@ void setupQATimers() {
 	interruptHandlerArray[0].divider=2; 
 }
 
+void edcConfSendMessage(char *key, char *value) {
+	unsigned char checksum = 0;
+	Serial.write(0x02);
+	for (unsigned char i=0;i<strlen(key);i++) {
+		checksum = (checksum<<1) ^ key[i];
+		Serial.write(key[i]);
+	}
+	Serial.write(':');
+	for (unsigned char i=0;i<strlen(value);i++) {
+		checksum = (checksum<<1) ^ value[i];
+		Serial.write(value[i]);
+	}
+	Serial.write(0x1f);
+	Serial.write(checksum);
+	Serial.write(0x03);
+}
+
+void edcConfSendStatus(unsigned char id,int val) {
+	char buf1[4];
+	char buf2[7];
+    itoa(id,buf1,10);
+    itoa(val,buf2,10);
+	edcConfSendMessage(buf1,buf2);
+}
+
 int i;
 #define BUFFER_SIZE 64
 char buffer[BUFFER_SIZE];
@@ -834,14 +862,26 @@ long time;
 
 boolean confChanged = 0;
 char loopCount = 0;
+boolean ecdConfEnabled = 0;
 
-
+void setup_old2() {
+	Serial.begin(115200);
+	Serial.write(0x02);
+	Serial.print("_RDY:dmn-edc 1.0");
+	Serial.write(0x03);
+	Serial.print("edcConf enabled");						
+	Serial.flush();
+}
+void loop_old2() {
+	edcConfSendStatus(42,6666);
+}
 void loop() {
 	boolean ignoreSleep = false;
 	doIdlePidControl();
 	refreshSlowSensors();
 	doBoostControl();
 	doTimingControl();
+
 
 //	static int rpmMin,rpmMax;
 	if (loopCount % 30 == 0) {	
@@ -921,89 +961,67 @@ void loop() {
 			confeditor.handleInput(lastKey);
 			} else {
 			// Special commands
-			switch (c) {
-/*                case 2: // STX
-					ignoreSleep = 1;
-					i=0;
-					int node;
-					int val;
-					node=-1;
-					val=-1;
+				switch (c) {
+                case 2: // STX
 					while (1) {
+						
 						if (Serial.available()) {
 							c = Serial.read();
 							if (c==3) // ETX
 								break;
-							if (c==':') {
-								buffer[i]=0;           
-								node = atoi(buffer);
-								i=0;
-							} else if (c==';') {
-								buffer[i]=0;           
-								val = atoi(buffer);
-								i=0;
-							} else if (i<BUFFER_SIZE-1) {
+							if (i<BUFFER_SIZE-1) {
 								buffer[i]=c;
 								i++;
 							}
 						}
 					}
 					buffer[i]=0;
-					int cksum;
-					cksum=atoi(buffer);    
-									  
-					if (cksum == 66 && node == 255) {
-						core.save();
-					}       
-					if (cksum == 66 && node > 0 && node <= Core::KEY_MAX) {
-						core.setCurrentNode(node);
-						core.setValue(val);
-						confChanged=1;
-						//if (node == Core::nodeQAPWMBase || node == Core::nodeQATimerInterval)
-						  //§  setupQATimers();
+					buffer[4]=0;					
+					if (strcmp(buffer,"_INI") == 0) {
+						// EDC Configurator enabled
+						ecdConfEnabled = true;
+						edcConfSendMessage("_RDY","dmn-edc 1.0");
+						Serial.print("edcConf enabled");						
 					}
-					break;
-					*/
-					default:
+
+				break;
+				default:
 					confeditor.handleInput(c);
-				}
 			}
 		}
+	}
 
-	/*
-	if (printValues) {
-		// print one packet of internal status (RPM,TPS, QA SetPoint, QA Position)
-		Serial.write(2); // stx
-		Serial.print("0,"); // Type=0 packet
-		Serial.print(core.controls[Core::valueEngineRPM],DEC); // RPM
-		Serial.write(',');
-		Serial.print(core.controls[Core::valueTPSActual],DEC);
-		Serial.write(',');
-		Serial.print(core.controls[Core::valueQAfeedbackSetpoint],DEC);
-		Serial.write(',');
-		Serial.print(core.controls[Core::valueQAfeedbackRaw],DEC);
-		Serial.write(',');
-		Serial.print(core.controls[Core::valueQAPWMActual],DEC);
-		Serial.write(',');
-		Serial.print((int)adjuster.p,DEC); 
-		Serial.write(',');
-		Serial.print((int)adjuster.i,DEC); 
-		Serial.write(',');
-		Serial.print((int)adjuster.d,DEC);        
-		Serial.write(',');
-		Serial.print(core.controls[Core::valueEngineTimingActual],DEC);    
-		Serial.write(3); // etx;
-		printValues = false;
-		}*/
+	if (ecdConfEnabled) {
+		unsigned long int l = millis();
+		l += 16;
+		do { 
+			
+			edcConfSendStatus(EDCCONF_RPM,core.controls[Core::valueEngineRPM]);
+			edcConfSendStatus(EDCCONF_TPS,core.controls[Core::valueTPSActual]);
+			edcConfSendStatus(EDCCONF_QA_SETPOINT,core.controls[Core::valueQAfeedbackSetpoint]);
+			edcConfSendStatus(EDCCONF_QA_ACTUAL,core.controls[Core::valueQAfeedbackActual]);
+			edcConfSendStatus(EDCCONF_MAP_SETPOINT,core.controls[Core::valueBoostPressure]);
+			edcConfSendStatus(EDCCONF_MAP_ACTUAL,core.controls[Core::valueBoostTarget]);		
+			edcConfSendStatus(EDCCONF_QA_PID_P,adjuster.p);
+			edcConfSendStatus(EDCCONF_QA_PID_P,adjuster.i);
+			edcConfSendStatus(EDCCONF_QA_PID_P,adjuster.d);
 
+			edcConfSendStatus(EDCCONF_TEMP_COOLANT,core.controls[Core::valueTempEngine]);
+			edcConfSendStatus(EDCCONF_TEMP_INTAKE,core.controls[Core::valueTempIntake]);
+			edcConfSendStatus(EDCCONF_TEMP_FUEL,core.controls[Core::valueTempFuel]);
+			
+			//edcConfSendStatus(42,6666);
+			
+		} while (millis() <= l);
+		
+	} else {
+		delay(1000/60);
+	}
+	static int debug;
+	debug = !debug;
+	digitalWrite(13,debug);
 	confeditor.refresh();
 
-	if (!ignoreSleep) {
-		static int debug;
-		debug = !debug;
-		digitalWrite(13,debug);
-		delay(1000/60);
-	} 
 
 	// Handle errors (generated by interrupt service)
 	if (rpm.getError()) {
