@@ -29,8 +29,8 @@
 #define ENGINE_STATE_PID_IDLE 11
 #define ENGINE_STATE_LOW_RPM_RANGE 100
 #define ENGINE_STATE_HIGH_RPM_RANGE 101
-#define ENGINE_RPM_HIGH_RANGE_LIMIT 2200
-#define ENGINE_RPM_CRANKING_LIMIT   370
+#define ENGINE_RPM_HIGH_RANGE_LIMIT 1750
+#define ENGINE_RPM_CRANKING_LIMIT   450
 
 
 /* Trigger inputs (interrupt handlers) */
@@ -105,6 +105,7 @@
 /* general outputs */
 #define PIN_TACHO_OUT 45
 #define PIN_GLOW_LIGHT 13
+#define PIN_RPM_PROBE 53
 
 /* general inputs */
 #define PIN_INPUT_POWER_ON 37

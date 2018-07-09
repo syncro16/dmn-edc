@@ -33,6 +33,8 @@ public:
 	void init();
 	unsigned int readValue(unsigned char pin);
 	unsigned int readValueAvarage(unsigned char pin);
+	unsigned int readValue_interrupt_safe(unsigned char pin);
+	
 };
 
 extern BackgroundADC adc;

@@ -118,7 +118,8 @@ public:
     static const unsigned char valueRpmDeviation5 = 69;
     static const unsigned char valueRpmDeviation6 = 70;
     static const unsigned char valueFan1State = 71;
-    static const unsigned char VALUE_MAX = 71;
+    static const unsigned char valueEngineRPMErrors = 72;
+    static const unsigned char VALUE_MAX = 73;
 
 
     // Storage for sensors values and such
@@ -246,6 +247,8 @@ public:
     static const unsigned char mapIdxFuelTrimFuelTemp = 10;
     static const unsigned char mapIdxFuelTrimAirTemp = 11;   
     static const unsigned char mapIdxActuatorTension = 12;
+    static const unsigned char mapIdxCoastingFuelLimit = 13;
+
 
     
     // unsigned char basicFuelMap[13+6*6];

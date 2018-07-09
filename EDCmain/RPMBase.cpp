@@ -2,11 +2,10 @@
 #include "core.h"
 
 RPMBase::RPMBase()  {
-	
+	errorCount=0;	
 }
 
 void RPMBase::init() {
-
 }
 unsigned int RPMBase::getLatestMeasure() {
 	return 0;

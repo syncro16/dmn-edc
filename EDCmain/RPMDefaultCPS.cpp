@@ -1,4 +1,5 @@
 #include "RPMDefaultCPS.h"
+#include "BackgroundADC.h"
 
 /* 
  *  Some low level functions for RPM counting (and also for injection timing measurement) 
@@ -25,6 +26,7 @@ unsigned char currentTick;
 
 volatile unsigned int rpmDuration;
 
+extern volatile unsigned int intHandlerCalls;
 
 static inline void rpmTimerSetup() __attribute__((always_inline));
 static inline void rpmTimerEnable() __attribute__((always_inline));
@@ -32,14 +34,14 @@ static inline void rpmTimerDisable() __attribute__((always_inline));
 void rpmTrigger();
 
 static inline void rpmTimerSetup()  {
-//	cli();
+	cli();
 	TCCR1A = 0; 
 	TCCR1B = 0; 
 	TCNT1 = 0;
 	OCR1A = 0xffff;
 
  	TIMSK1 |= (1 << OCIE1A); // enable timer compare interrupt
- //	sei();
+	sei();
 	//attachInterrupt(0, rpmTrigger, RISING);  // Interrupt 0 -- PIN2 -- LM1815 gated output 
 	
 	
@@ -48,17 +50,13 @@ static inline void rpmTimerSetup()  {
  }
 
  static inline void rpmTimerEnable() {
-// 	cli();
  	TCNT1 = 0;
  	TCCR1B = 11; // WGM12 = 8 +CS11 = 2+CS10 = 1
- //	sei();
  }
 
  static void rpmTimerDisable() {
- //	cli();
  	TCCR1A = 0;
  	TCCR1B = 0;
- //	sei();
  	rpmDuration = 0;
  }
  
@@ -82,7 +80,28 @@ volatile long rpmMin;
 
 void rpmTrigger() { 
 	unsigned int dur = TCNT1;
+	unsigned int on=0,off=0;
+	if (intHandlerCalls)
+		*errCnt = intHandlerCalls;
+
 	TCNT1 = 0;
+	digitalWrite(PIN_RPM_PROBE,HIGH);
+
+	for (unsigned int i=0;i<10;i++) {
+		if (digitalRead(PIN_INPUT_RPM)) {
+			on++;
+		} else {
+			off++;
+		}
+	}
+	digitalWrite(PIN_RPM_PROBE,LOW);	
+	if (on) {
+		TCNT1 += dur; // restore
+		//*errCnt++;
+		return;
+	}
+
+
 	/*if (core.controls[Core::valueRunMode] >= ENGINE_STATE_IDLE ) {
 		// allow 10% error, otherwise 
 		long maxErr = dur/10;
@@ -112,7 +131,11 @@ void rpmTrigger() {
 	if (currentTick>(NUMBER_OF_CYLINDERS*2-1))
 		currentTick = 0;
 
-	rpmTimerEnable();
+	if (core.controls[Core::valueRunMode] = ENGINE_STATE_PID_IDLE)
+		core.controls[Core::valueQAfeedbackActual] = adc.readValue(PIN_ANALOG_QA_POS);   
+
+//	rpmTimerEnable();
+ 	TCCR1B = 11; // WGM12 = 8 +CS11 = 2+CS10 = 1
 
 }
 
@@ -152,7 +175,10 @@ unsigned int RPMDefaultCps::getLatestMeasureFiltered() {
 	//TODO 
 	if (total==0)
 		return 0;	
-	return ((unsigned long)(60*F_CPU/64/NUMBER_OF_CYLINDERS)/((unsigned long)total)); 
+	cli();
+	unsigned int ret = ((unsigned long)(60*F_CPU/64/NUMBER_OF_CYLINDERS)/((unsigned long)total)); 
+	sei();
+	return ret;
 }
 
 unsigned int RPMDefaultCps::getLatestRawValue() {

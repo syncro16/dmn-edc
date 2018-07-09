@@ -13,6 +13,7 @@ ISR(ADC_vect) {
 	static unsigned char adcPin=0;
 
 	unsigned char h,l;
+	cli();
 	l = ADCL; // must read first
 	h = ADCH;
 	adcBuffer[adcPin] = h << 8 | l;
@@ -33,6 +34,7 @@ ISR(ADC_vect) {
 
 	// start the conversion
 	sbi(ADCSRA, ADSC);
+	sei();	
 }
 
 void BackgroundADC::init() {
@@ -65,6 +67,14 @@ unsigned int BackgroundADC::readValue(unsigned char pin) {
 	cli();
 	ret = adcBuffer[pin & 0xf];
 	sei();
+	return ret;
+}
+
+unsigned int BackgroundADC::readValue_interrupt_safe(unsigned char pin) {
+	if (pin >= PIN_A0)
+		pin = pin-PIN_A0;
+	unsigned int ret;
+	ret = adcBuffer[pin & 0xf];
 	return ret;
 }
 

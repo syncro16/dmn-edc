@@ -108,7 +108,7 @@ Core::Core() {
 
 	node[nodeSoftwareVersion] = (nodeStruct) {0x0000,VERSION_NUMBER,0x0103,9999,1,valueEngineRPMMin,valueEngineRPMMax,NODE_PROPERTY_LOCKED,VALUE_INT};  
 	node[nodeEngineRPM] =       (nodeStruct) {0x1001,0,0,0,1,valueEngineRPMFiltered,valueEngineRPMJitter, NODE_PROPERTY_LOCKED,VALUE_INT};
-	node[nodeEngineTiming] =    (nodeStruct) {0x1002,0,0,0,1,valueEngineTimingActual,valueNone, NODE_PROPERTY_LOCKED,VALUE_INJECTION_TIMING};  
+	node[nodeEngineTiming] =    (nodeStruct) {0x1002,0,0,0,1,valueEngineTimingActual,valueEngineRPMErrors, NODE_PROPERTY_LOCKED,VALUE_INJECTION_TIMING};  
 	node[nodeTempEngine] =      (nodeStruct) {0x10e3,47,255,0,1,valueTempEngine,valueTempEngineRaw, NODE_PROPERTY_LOCKED,VALUE_CELSIUS};  
 	node[nodeTempFuel] =        (nodeStruct) {0x10e4,47,0,255,1,valueTempFuel,valueTempFuelRaw, NODE_PROPERTY_LOCKED,VALUE_CELSIUS};  
 	node[nodeTempIntake] =         (nodeStruct) {0x10e5,47, 0,255,1,valueTempIntake,valueTempIntakeRaw, NODE_PROPERTY_LOCKED,VALUE_CELSIUS};  
@@ -262,6 +262,12 @@ Core::Core() {
 		0,0,0,0,0                // lastX,lastY,lastRet,lastRet 10bit (2 bytes)
 	};
 
+	static unsigned char coastMap[] = {
+		0xF5,0xF0,'M','1','D',
+		0x8,0x1,MAP_AXIS_RPM,MAP_AXIS_NONE,MAP_AXIS_INJECTED_FUEL,
+		100,100,50,10, 0,0,0,0,
+		0,0,0,0,0    		
+	};
 
 	static unsigned char fuelTrimFuelTemp[] = {
 		0xF3,0xF0,'M','1','D',
@@ -386,6 +392,7 @@ Core::Core() {
 	mapNames[Core::mapIdxFuelTrimAirTemp] = "Fuel Trim amount vs. Air Temp.";
 	mapNames[Core::mapIdxActuatorTension] = "Turbo Actuator Operating Curve";
 	mapNames[Core::mapIdxIdlePidP] = "Idle PID P-parameter during idle";
+	mapNames[Core::mapIdxCoastingFuelLimit] = "Fuel limit during coasting";
 
 
 	maps[Core::mapIdxFuelMap] = (unsigned char*)&fuelMap;
@@ -404,9 +411,9 @@ Core::Core() {
 	maps[Core::mapIdxFuelTrimAirTemp] = (unsigned char*)&fuelTrimAirTemp;
 	maps[Core::mapIdxActuatorTension] = (unsigned char*)&actuatorTension;
 	maps[Core::mapIdxIdlePidP] = (unsigned char*)&idlePidP;
+	maps[Core::mapIdxCoastingFuelLimit] = (unsigned char*)&coastMap;
 
-
-	numberOfMaps=13;
+	numberOfMaps=14;
 }
 
 /*

@@ -347,7 +347,7 @@ void ConfEditor::pageDTC() {
 			dtc.resetAll();
 			break;
 		case 'g':
-			dtc.setError(DTC_TRAP_1);
+			dtc.setError(DTC_TRAP_2);
 			break;
 	}
 	if (keyPressed != -1 || tick % 32 == 0) {

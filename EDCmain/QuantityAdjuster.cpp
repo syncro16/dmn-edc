@@ -48,8 +48,11 @@ void QuantityAdjuster::update() {
 	}
 
 	core.controls[Core::valueQAfeedbackSetpoint] = setPoint; 
+	// Read qa position always if not running idle (or during load).
+	// When running idle (or load) read is synced to RPM signal to improve signal quality
 
-	core.controls[Core::valueQAfeedbackActual] = adc.readValue(PIN_ANALOG_QA_POS);   
+	if (core.controls[Core::valueRunMode] < ENGINE_STATE_PID_IDLE)
+		core.controls[Core::valueQAfeedbackActual] = adc.readValue_interrupt_safe(PIN_ANALOG_QA_POS);   
 	
 	//core.controls[Core::valueQAfeedbackActual] = analogRead(PIN_ANALOG_QA_POS);      
 
