@@ -131,8 +131,8 @@ void rpmTrigger() {
 	if (currentTick>(NUMBER_OF_CYLINDERS*2-1))
 		currentTick = 0;
 
-	if (core.controls[Core::valueRunMode] = ENGINE_STATE_PID_IDLE)
-		core.controls[Core::valueQAfeedbackActual] = adc.readValue(PIN_ANALOG_QA_POS);   
+	if (core.controls[Core::valueRunMode] >= ENGINE_STATE_PID_IDLE)
+		core.controls[Core::valueQAfeedbackActual] = adc.readValue_interrupt_safe(PIN_ANALOG_QA_POS);   
 
 //	rpmTimerEnable();
  	TCCR1B = 11; // WGM12 = 8 +CS11 = 2+CS10 = 1
@@ -152,9 +152,10 @@ unsigned int RPMDefaultCps::getLatestMeasure() {
 	if (rpmDuration<10)
 		return 0;
 	// 64 = timer divider
-	cli();
+	// cli sei is to moved parent class
+//	cli();
 	unsigned int ret=((unsigned long)(60*F_CPU/64/NUMBER_OF_CYLINDERS)/((unsigned long)rpmDuration)); 
-	sei();
+//	sei();
 	return ret;
 }
 

@@ -18,10 +18,11 @@ int RPMBase::getInjectionTiming() {
 }
 
 void RPMBase::measure() {
+	cli();
 	core.controls[Core::valueEngineRPMFiltered] = getLatestMeasure();//getLatestMeasureFiltered();
 	core.controls[Core::valueEngineRPM] = getLatestMeasure();
 	core.controls[Core::valueEngineRPMRaw] = getLatestRawValue();
-
+	sei();	
 	core.controls[Core::valueRpmDeviation1] = getDeviationForCylinder(0);
 	core.controls[Core::valueRpmDeviation2] = getDeviationForCylinder(1);
 	core.controls[Core::valueRpmDeviation3] = getDeviationForCylinder(2);
