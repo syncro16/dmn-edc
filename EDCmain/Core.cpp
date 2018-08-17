@@ -212,7 +212,7 @@ Core::Core() {
 	node[nodeFuelMapSmoothness] =  (nodeStruct) {0x1100,0,0,100,5,valueNone,valueNone, NODE_PROPERTY_EDITABLE,VALUE_INT};     
 	node[nodeInitialInjectionQuantity] =   (nodeStruct) {0x1101,120,0,1000,5,valueNone,valueNone, NODE_PROPERTY_EDITABLE,VALUE_INT};     
 	node[nodeMaximalInjectionQuantity] =   (nodeStruct) {0x1103,1020,0,1023,5,valueNone,valueNone, NODE_PROPERTY_EDITABLE,VALUE_INT};     
-	node[nodeFan1SwitchOnTemp] =  (nodeStruct) {0x1102,165,0,255,1,valueNone,valueFan1State, NODE_PROPERTY_EDITABLE,VALUE_CELSIUS};     
+	node[nodeFan1SwitchOnTemp] =  (nodeStruct) {0x1102,132,0,255,1,valueNone,valueFan1State, NODE_PROPERTY_EDITABLE,VALUE_CELSIUS};     
 
 	currentNode = LIST_RESET;
 
@@ -234,7 +234,7 @@ Core::Core() {
 	    100,    100,    100,    100,    60,    77,     10,     0,
         100,    100,    100,    100,    100,    100,    77,     0,
         100,    100,    100,    100,    100,    100,    100,    0,      
-	  0,0,0,0,0                // lastX,lastY,lastRet,lastRet 10bit (2 bytes)
+		0,0,0,0,0,1,1                // lastX,lastY,lastRet,lastRet 10bit (2 bytes),idxX,idxY
 	 };
 
 	/* additive (injection) fuel map for boost */
@@ -248,7 +248,7 @@ Core::Core() {
 	  30,30,78,78, 85,85,85,0,	  
 	  0,0,0,0, 0,0,0,0,
 	  0,0,0,0, 0,0,0,0,
-	  0,0,0,0,0                // lastX,lastY,lastRet,lastRet 10bit (2 bytes)
+		0,0,0,0,0,1,1                // lastX,lastY,lastRet,lastRet 10bit (2 bytes),idxX,idxY
 	};
 
 	/* Cold Start & idle fuel map */
@@ -259,28 +259,28 @@ Core::Core() {
 		190,130,90,80, 70,60,50,40,		
 		190,120,90,80, 70,60,50,40,
 		190,110,90,80, 70,60,50,40,
-		0,0,0,0,0                // lastX,lastY,lastRet,lastRet 10bit (2 bytes)
+		0,0,0,0,0,1,1                // lastX,lastY,lastRet,lastRet 10bit (2 bytes),idxX,idxY
 	};
 
 	static unsigned char coastMap[] = {
 		0xF5,0xF0,'M','1','D',
 		0x8,0x1,MAP_AXIS_RPM,MAP_AXIS_NONE,MAP_AXIS_INJECTED_FUEL,
 		100,100,50,10, 0,0,0,0,
-		0,0,0,0,0    		
+		0,0,0,0,0,1,1                // lastX,lastY,lastRet,lastRet 10bit (2 bytes),idxX,idxY
 	};
 
 	static unsigned char fuelTrimFuelTemp[] = {
 		0xF3,0xF0,'M','1','D',
 		0x8,0x1,MAP_AXIS_CELSIUS,MAP_AXIS_NONE,MAP_AXIS_FUEL_TRIM_AMOUNT,
 		128,128,128,128,128,128,128,128,
-		0,0,0,0,0                // lastX,lastY,lastRet,lastRet 10bit (2 bytes)
+		0,0,0,0,0,1,1                // lastX,lastY,lastRet,lastRet 10bit (2 bytes),idxX,idxY
 	};
 	
 	static unsigned char fuelTrimAirTemp[] = {
 		0xF4,0xF0,'M','1','D',
 		0x8,0x1,MAP_AXIS_CELSIUS,MAP_AXIS_NONE,MAP_AXIS_FUEL_TRIM_AMOUNT,
 		128,128,128,128,128,128,128,128,
-		0,0,0,0,0                // lastX,lastY,lastRet,lastRet 10bit (2 bytes)
+		0,0,0,0,0,1,1                // lastX,lastY,lastRet,lastRet 10bit (2 bytes),idxX,idxY
 	};
 
 	/* 0xe? engine timing */
@@ -295,7 +295,7 @@ Core::Core() {
 		255,255,255,    190,140,0, 
 		255,255,255,    100,80,0, 
 		100,100,100,    50,50,0, 
-		0,0,0,0,0                // lastX,lastY,lastRet,lastRet 10bit (2 bytes)
+		0,0,0,0,0,1,1                // lastX,lastY,lastRet,lastRet 10bit (2 bytes),idxX,idxY
 	};
 
 	/* dynamic mode */
@@ -310,7 +310,7 @@ Core::Core() {
 		0,0,0, 0,0,0, 
 		0,0,0, 0,0,0, 
 		0,0,0, 0,0,0,  
-		0,0,0,0,0                // lastX,lastY,lastRet,lastRet 10bit (2 bytes)
+		0,0,0,0,0,1,1                // lastX,lastY,lastRet,lastRet 10bit (2 bytes),idxX,idxY
 	};
 
 
@@ -327,7 +327,7 @@ Core::Core() {
 		201,201,195,166,153,140,
 		201,182,118,151,151,28,
 		201,182,156,103,59,28,		
-		0,0,0,0,0                // lastX,lastY,lastRet,lastRet 10bit (2 bytes)
+		0,0,0,0,0,1,1                // lastX,lastY,lastRet,lastRet 10bit (2 bytes),idxX,idxY
 	};
 
 	/* target pressure map */
@@ -338,7 +338,7 @@ Core::Core() {
 		0,0,0,10,20,100,	
 		0,0,10,30,100,128,
 		100,100,100,100,100,100,
-		0,0,0,0,0                // lastX,lastY,lastRet,lastRet 10bit (2 bytes)
+		0,0,0,0,0,1,1                // lastX,lastY,lastRet,lastRet 10bit (2 bytes),idxX,idxY
 	};
 
 	/* actuator opening/operating curve */
@@ -346,7 +346,7 @@ Core::Core() {
 		0xd2,0xF0,'M','1','D',
 		0x8,0x1,MAP_AXIS_RAW,MAP_AXIS_NONE,MAP_AXIS_RAW,
 		255,215,192,143,90,55,23,0,
-		0,0,0,0,0                // lastX,lastY,lastRet,lastRet 10bit (2 bytes)
+		0,0,0,0,0,1,1                // lastX,lastY,lastRet,lastRet 10bit (2 bytes),idxX,idxY
 	};			
 
 	/* 0xc? - temperature related maps */
@@ -355,14 +355,14 @@ Core::Core() {
 		0xc4,0xF0,'M','1','D',
 		0x8,0x1,MAP_AXIS_CELSIUS,MAP_AXIS_NONE,MAP_AXIS_HALF_SECONDS,
 		40,22,8,6,3,0,0,0,
-		0,0,0,0,0                // lastX,lastY,lastRet,lastRet 10bit (2 bytes)
+		0,0,0,0,0,1,1                // lastX,lastY,lastRet,lastRet 10bit (2 bytes),idxX,idxY
 	};
 
 	static unsigned char tempSenderMap[] = {
 		0xc5,0xF0,'M','1','D',
 		0x8,0x1,MAP_AXIS_CELSIUS,MAP_AXIS_NONE,MAP_AXIS_RAW,
 		0,0,18,66,130,170,255,255,
-		0,0,0,0,0                // lastX,lastY,lastRet,lastRet 10bit (2 bytes)
+		0,0,0,0,0,1,1                // lastX,lastY,lastRet,lastRet 10bit (2 bytes),idxX,idxY
 	};
 	
 
@@ -374,7 +374,7 @@ Core::Core() {
 		0x70,0xF0,'M','1','D',
 		10,0x1,MAP_AXIS_IDLERPM,MAP_AXIS_NONE,MAP_AXIS_RAW,
 		12,12,10,6,4, 2,2,2,5,10,
-		0,0,0,0,0                // lastX,lastY,lastRet,lastRet 10bit (2 bytes)
+		0,0,0,0,0,1,1                // lastX,lastY,lastRet,lastRet 10bit (2 bytes),idxX,idxY
 	};		
 
 	mapNames[Core::mapIdxFuelMap] = "Basic Injection Map";
@@ -498,6 +498,7 @@ bool Core::load() {
 			ofs += 2;
 
 			switch ((fileId & 0xFF00)) {
+				case 0x1100:
 				case 0x1000:
 					if (size == 2) {
 						// Core item, length should be 2

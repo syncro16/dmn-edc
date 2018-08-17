@@ -24,7 +24,7 @@ void QuantityAdjuster::reset() {
 	integral=0;
 	error=0;
 }
-void QuantityAdjuster::update() {
+void QuantityAdjuster::update(char skip) {
 	if (qaCalls)
 		dtc.setError(DTC_TRAP_1);
 
@@ -51,8 +51,12 @@ void QuantityAdjuster::update() {
 	// Read qa position always if not running idle (or during load).
 	// When running idle (or load) read is synced to RPM signal to improve signal quality
 
-	if (core.controls[Core::valueRunMode] < ENGINE_STATE_PID_IDLE)
+	if (core.controls[Core::valueRunMode] < ENGINE_STATE_PID_IDLE) {
 		core.controls[Core::valueQAfeedbackActual] = adc.readValue_interrupt_safe(PIN_ANALOG_QA_POS);   
+	}
+	if (core.controls[Core::valueRunMode] == ENGINE_STATE_HIGH_LOAD_RANGE) {	
+		core.controls[Core::valueQAfeedbackActual] = adc.readValueAvarage_interrupt_safe(PIN_ANALOG_QA_POS);   
+	}
 	
 	//core.controls[Core::valueQAfeedbackActual] = analogRead(PIN_ANALOG_QA_POS);      
 
@@ -117,7 +121,7 @@ void QuantityAdjuster::update() {
 		currentDutyCycle = output; 
 	}
 
-	if (core.controls[Core::valueQADebug] == 0) {
+	if (core.controls[Core::valueQADebug] == 0 && !skip) {
 		// skip pwm set for test purposes
 		if (setPoint>0) {
 			core.controls[Core::valueQAPWMActual] = currentDutyCycle; 

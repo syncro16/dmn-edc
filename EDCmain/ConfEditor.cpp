@@ -551,7 +551,9 @@ void ConfEditor::pageMapEditor(bool compactMode = false) {
 	unsigned char lastYpos = *(mapData+8+tableSizeX*tableSizeY+1);
 	unsigned char lastValue = *(mapData+8+tableSizeX*tableSizeY+2);
 	unsigned int lastValue10b = *(unsigned int*)(mapData+8+tableSizeX*tableSizeY+3);
-	
+	unsigned char idxX = *(mapData+8+tableSizeX*tableSizeY+5);
+	unsigned char idxY = *(mapData+8+tableSizeX*tableSizeY+6);
+
 	const char xPad = 5;
 	char xSpace ;
 
@@ -706,6 +708,13 @@ void ConfEditor::pageMapEditor(bool compactMode = false) {
 
 	// table live view (last queried X, Y and returned interpolated value (8bit or 10bit interpolated value)
 	if (tick % 4 == 0) {
+		ansiGotoXy(3,yPad);
+		Serial.print("(");
+		Serial.print(idxX);
+		Serial.print(",");
+		Serial.print(idxY);
+		Serial.print(")");
+
 		ansiGotoXy(2,yPad+ySpace+round((float)mapEditorData.lastY*(float)((float)(tableSizeY-1)*(float)ySpace/255)));
 		Serial.print("  ");
 		ansiGotoXy(xPad+xSpace+round((float)mapEditorData.lastX*(float)((float)tableSizeX*(float)xSpace/255)),yPad-1);
@@ -725,6 +734,10 @@ void ConfEditor::pageMapEditor(bool compactMode = false) {
 			printMapAxis(axisTypeResult,lastValue,1);
 			Serial.print(" / ");
 			Serial.print(lastValue10b);
+		/*	Serial.print("\t X:");
+			Serial.print(idxX,DEC);		
+			Serial.print("\t Y:");
+			Serial.print(idxY,DEC);	*/	
 			ansiClearEol();
 		}
 		

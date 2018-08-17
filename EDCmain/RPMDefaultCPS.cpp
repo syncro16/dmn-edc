@@ -131,8 +131,15 @@ void rpmTrigger() {
 	if (currentTick>(NUMBER_OF_CYLINDERS*2-1))
 		currentTick = 0;
 
-	if (core.controls[Core::valueRunMode] >= ENGINE_STATE_PID_IDLE)
-		core.controls[Core::valueQAfeedbackActual] = adc.readValue_interrupt_safe(PIN_ANALOG_QA_POS);   
+	if (core.controls[Core::valueRunMode] >= ENGINE_STATE_PID_IDLE &&
+		core.controls[Core::valueRunMode] < ENGINE_STATE_HIGH_LOAD_RANGE) {
+		static int lastMeasure = 0;
+		int measure = adc.readValue_interrupt_safe(PIN_ANALOG_QA_POS);
+		if (!lastMeasure) 
+			lastMeasure=measure;
+		core.controls[Core::valueQAfeedbackActual] = (lastMeasure+measure)/2;   
+		lastMeasure = measure;
+	}
 
 //	rpmTimerEnable();
  	TCCR1B = 11; // WGM12 = 8 +CS11 = 2+CS10 = 1

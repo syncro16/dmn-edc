@@ -28,6 +28,8 @@ class RPMCustomCPS : public RPMBase {
 	public:
 	void init();
 	unsigned int getLatestMeasure();
+	unsigned int getLatestMeasureFiltered();
+
 	unsigned int getLatestRawValue();
 	
 	private:

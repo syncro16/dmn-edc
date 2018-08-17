@@ -88,3 +88,12 @@ unsigned int BackgroundADC::readValueAvarage(unsigned char pin) {
     return round(aOutput[pin]);
 }
 
+unsigned int BackgroundADC::readValueAvarage_interrupt_safe(unsigned char pin) {
+	if (pin >= PIN_A0)
+		pin = pin-PIN_A0;
+	unsigned int input = readValue_interrupt_safe(pin);
+    if (aOutput[pin] == -1)
+        aOutput[pin] = input;
+    aOutput[pin] += (input-aOutput[pin]) * aOversamplingFactor[pin];
+    return round(aOutput[pin]);
+}

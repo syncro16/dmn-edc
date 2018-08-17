@@ -257,6 +257,8 @@ unsigned char mapLookUp(unsigned char *mapData,unsigned char x,unsigned char y) 
     unsigned char tableSizeY = *(mapData+4+2);
     unsigned char yPos;
     int ofs = 10; // skip headers
+    unsigned char idxX;
+    unsigned char idxY;
 
     *(mapData+ofs+tableSizeX*tableSizeY) = x;
     *(mapData+ofs+tableSizeX*tableSizeY+1) = y;
@@ -278,12 +280,22 @@ unsigned char mapLookUp(unsigned char *mapData,unsigned char x,unsigned char y) 
     unsigned char ret;
     if (isInterpolated == 'D') {
         int amountX = (x % (256/(tableSizeX-1)))*(10000/(256/(tableSizeX-1)));
+        if (amountX<5000) {
+            idxX = 1+xPos;
+        } else {
+            idxX = 1+xPos+1;
+        }        
         if (tableSizeY) {
             // 2D
             int amountY = (y % (256/(tableSizeY-1)))*(10000/(256/(tableSizeY-1)));
             char y1 = mapInterpolate(p1,p2,amountX /100);
             char y2 = mapInterpolate(p3,p4,amountX /100);
             ret = mapInterpolate(y1,y2,amountY /100);
+            if (amountY<5000) {
+                idxY = 1+yPos;
+            } else {
+                idxY = 1+yPos+1;
+            }            
         } 
         else {
             // 1D
@@ -294,6 +306,9 @@ unsigned char mapLookUp(unsigned char *mapData,unsigned char x,unsigned char y) 
         ret = p1;
     }
     *(mapData+ofs+tableSizeX*tableSizeY+2) = ret;
+    *(mapData+ofs+tableSizeX*tableSizeY+5) = idxX;
+    *(mapData+ofs+tableSizeX*tableSizeY+6) = idxY;    
+
     return ret;
 }
 
@@ -303,6 +318,8 @@ unsigned int mapLookUp10bit(unsigned char *mapData,unsigned char x,unsigned char
     unsigned char tableSizeY = *(mapData+4+2);
     unsigned char yPos;
     int ofs = 10; // skip headers
+    unsigned char idxX;
+    unsigned char idxY;
 
     *(mapData+ofs+tableSizeX*tableSizeY) = x;
     *(mapData+ofs+tableSizeX*tableSizeY+1) = y;
@@ -324,12 +341,22 @@ unsigned int mapLookUp10bit(unsigned char *mapData,unsigned char x,unsigned char
     unsigned int ret;
     if (isInterpolated == 'D') {
         int amountX = (x % (256/(tableSizeX-1)))*(10000/(256/(tableSizeX-1)));
+        if (amountX<50) {
+            idxX = 1+xPos;
+        } else {
+            idxX = 1+xPos+1;
+        }
         if (tableSizeY) {
             // 2D
             int amountY = (y % (256/(tableSizeY-1)))*(10000/(256/(tableSizeY-1)));
             char y1 = mapInterpolate(p1,p2,amountX /100);
             char y2 = mapInterpolate(p3,p4,amountX /100);
             ret = mapInterpolate10bit(y1,y2,amountY /100);
+            if (amountY<50) {
+                idxY = 1+yPos;
+            } else {
+                idxY = 1+yPos+1;
+            }
         } 
         else {
             // 1D
@@ -341,6 +368,8 @@ unsigned int mapLookUp10bit(unsigned char *mapData,unsigned char x,unsigned char
     }
     *(mapData+ofs+tableSizeX*tableSizeY+2) = ret/4;
     *(unsigned int*)(mapData+ofs+tableSizeX*tableSizeY+3) = ret;
+    *(mapData+ofs+tableSizeX*tableSizeY+5) = idxX;
+    *(mapData+ofs+tableSizeX*tableSizeY+6) = idxY; 
     return ret;
 }
 

@@ -42,7 +42,7 @@ public:
 public:
     void (*callback)();
     QuantityAdjuster();
-    void update();
+    void update(char skip);
     void initialize();
     void setPosition(int val);
     void triggerHit();

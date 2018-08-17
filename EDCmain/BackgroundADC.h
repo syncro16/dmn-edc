@@ -34,6 +34,8 @@ public:
 	unsigned int readValue(unsigned char pin);
 	unsigned int readValueAvarage(unsigned char pin);
 	unsigned int readValue_interrupt_safe(unsigned char pin);
+	unsigned int readValueAvarage_interrupt_safe(unsigned char pin);
+
 	
 };
 

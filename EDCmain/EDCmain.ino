@@ -55,6 +55,11 @@ Todo:
 extern volatile long rpmMax;
 extern volatile long rpmMin;
 
+// some debug toggles
+volatile static char qaTemporaryDisabled = 0;
+static char qaFollowsTPS = 0;
+
+
 // Crankshaft position sensor decoding, use RPMDefaultCps or RPMHiDensityCps 
 static RPMDefaultCps rpm;
 
@@ -92,7 +97,8 @@ void mainInterruptHandler() {
 } 
 
 void refreshQuantityAdjuster() {
-	adjuster.update();
+//	if (!qaTemporaryDisabled)
+	adjuster.update(qaTemporaryDisabled);
 }
 
 
@@ -526,6 +532,13 @@ void refreshFastSensors() {
 	/* call rpm measurement function which converts internal timer state to rotation per minute (and stores it to control structure) */
 	rpm.measure();	
 
+	if (qaFollowsTPS) {
+		// just for some debugging for pid variables
+		core.controls[Core::valueRunMode] = ENGINE_STATE_CRANKING;
+		adjuster.setPosition(core.controls[Core::valueTPSActual]*4);
+		return;
+	}
+
 	if (core.controls[Core::valueEngineRPMFiltered] == 0) {
 		core.controls[Core::valueRunMode]=ENGINE_STATE_STOPPED;
 	}
@@ -564,11 +577,12 @@ void refreshFastSensors() {
 
 		if (amountBase>amountPIDIdle) {
 			core.controls[Core::valueFuelBaseAmount] = amountBase;
-			core.controls[Core::valueRunMode] = ENGINE_STATE_LOW_RPM_RANGE;
 		} else {
 			core.controls[Core::valueFuelBaseAmount] = amountPIDIdle;
 			core.controls[Core::valueRunMode] = ENGINE_STATE_PID_IDLE;
 		}
+
+		// TODO LOW_RPM / HIGH_RPM -> low load / high load
 
 	//	if (core.controls[Core::valueEngineRPMFiltered]<=ENGINE_RPM_CRANKING_LIMIT) {
 	//		core.controls[Core::valueRunMode]=ENGINE_STATE_CRANKING;			
@@ -603,6 +617,14 @@ void refreshFastSensors() {
 			fuelAmount += core.controls[Core::valueFuelEnrichmentAmount];
 		}
 	
+		if (amountBase>amountPIDIdle) {
+			// determinate if we are running high or low load
+			if (fuelAmount > 200 && core.controls[Core::valueEngineRPMFiltered]>1750) {
+				core.controls[Core::valueRunMode] = ENGINE_STATE_HIGH_LOAD_RANGE;
+			} else {
+				core.controls[Core::valueRunMode] = ENGINE_STATE_LOW_LOAD_RANGE;				
+			}
+		}
 	}
 
 	if (core.node[Core::nodeFuelMapSmoothness].value>0) {
@@ -623,7 +645,6 @@ void refreshFastSensors() {
 
 
 	adjuster.setPosition(core.controls[Core::valueFuelAmount]);
-
 }
 
 static unsigned char halfSeconds = 0;
@@ -792,7 +813,7 @@ void setup() {
 
 void setupQATimers() {
 	// 2000 = 500ticks -// was 500
-	Timer3.initialize(4000); // in microseconds, also sets PWM base frequency for "mega" pins 5,2,3 // 2000 = old default
+	Timer3.initialize(2000); // in microseconds, also sets PWM base frequency for "mega" pins 5,2,3 // 2000 = old default
 	adjuster.initialize();
 
 	Timer3.attachInterrupt(mainInterruptHandler,0);
@@ -938,12 +959,21 @@ void loop() {
 					case 'D':
 					lastKey = KEY_LEFT;
 					break;
-				}
+			}
 			}
 			confeditor.handleInput(lastKey);
 			} else {
 			// Special commands
 				switch (c) {
+				case ',':
+					qaTemporaryDisabled = !qaTemporaryDisabled;
+					confeditor.setSystemStatusMessage(qaTemporaryDisabled?"QA Disable":"QA Normal");
+					break;
+				case ';':
+					qaFollowsTPS = !qaFollowsTPS;
+					confeditor.setSystemStatusMessage(qaFollowsTPS?"QaPos=TPS":"QaPOS=Map");
+					break;
+						
                 case 2: // STX
 					while (1) {
 						

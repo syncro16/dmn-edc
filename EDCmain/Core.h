@@ -227,7 +227,7 @@ public:
     static const unsigned char nodeInitialInjectionQuantity = 86;
     static const unsigned char nodeMaximalInjectionQuantity = 87;
     static const unsigned char nodeFan1SwitchOnTemp = 88;
-    static const unsigned char NODE_MAX = 88;
+    static const unsigned char NODE_MAX = 89;
     
     static const unsigned char LIST_RESET = -1;
     // Storage for configuragble items
